@@ -3,11 +3,12 @@ convolutions-rs is a that provides a fast, well-tested convolutions library for 
 
 This crate has been developed in the course of the ZipNet project (https://github.com/Conzel/zipnet), where we required a C-free implementation of convolutions in order to compile our code to WebASM.
 
-## Benefits of this crate
-- [x] It is fast
+## Features 
 - [x] Minimal dependencies, especially no C-dependencies
 - [x] Extensively tested through randomly generated unit tests
 - [x] 100% compatible with Tensorflow and Pytorch implementations
+- [ ] Speed verified by benchmarking
+- [ ] Generics to ensure smooth usage
 
 ## Usage
 As mentioned, this package provides normal convolutions as well as transposed convolutions. We provide both in the form of free functions as well as something resembling a neural network layer. This crate also requires ndarray to use the functions, as input and output are in the form of ndarrays.

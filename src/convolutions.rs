@@ -1,19 +1,19 @@
+//! Module that contains classical convolutions, as used f.e. in convolutional neural networks.
+//!
+//! More can be read here:
+//! - <https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53?gi=f4a37beea40b>
 use crate::{ImagePrecision, InternalDataRepresentation, Padding, WeightPrecision};
 use ndarray::*;
 
 /// Rust implementation of a convolutional layer.
 /// The weight matrix shall have dimension (in that order)
-/// input channels x output channels x kernel width x kernel height
-/// (to comply with the order in which pytorch weights are saved).
+/// (input channels, output channels, kernel width, kernel height),
+/// to comply with the order in which pytorch weights are saved.
 pub struct ConvolutionLayer {
     /// Weight matrix of the kernel
-    pub kernel: Array4<WeightPrecision>,
-    pub kernel_width: usize,
-    pub kernel_height: usize,
-    pub stride: usize,
-    pub padding: Padding,
-    pub num_filters: u16,
-    pub img_channels: u16,
+    pub(in crate) kernel: Array4<WeightPrecision>,
+    pub(in crate) stride: usize,
+    pub(in crate) padding: Padding,
 }
 
 impl ConvolutionLayer {
@@ -25,20 +25,11 @@ impl ConvolutionLayer {
         stride: usize,
         padding: Padding,
     ) -> ConvolutionLayer {
-        let num_filters = weights.len_of(Axis(0)) as u16; // Filters
-        let img_channels = weights.len_of(Axis(1)) as u16; // Channels
-        let kernel_height = weights.len_of(Axis(2)); // Height
-        let kernel_width = weights.len_of(Axis(3)); // Width
-
-        debug_assert!(stride > 0, "Stride of 0 passed");
+        assert!(stride > 0, "Stride of 0 passed");
 
         ConvolutionLayer {
             kernel: weights,
-            kernel_width,
-            kernel_height,
             stride,
-            num_filters,
-            img_channels,
             padding,
         }
     }
@@ -60,12 +51,13 @@ impl ConvolutionLayer {
         ConvolutionLayer::new(permuted_array, stride, padding)
     }
 
+    /// Analog to conv2d.
     pub fn convolve(self, image: &InternalDataRepresentation) -> InternalDataRepresentation {
         conv2d(&self.kernel, image, self.padding, self.stride)
     }
 }
 
-pub fn get_padding_size(
+pub(in crate) fn get_padding_size(
     input_h: usize,
     input_w: usize,
     stride: usize,
@@ -102,7 +94,7 @@ pub fn get_padding_size(
     )
 }
 
-pub fn im2col_ref<'a, T>(
+pub(in crate) fn im2col_ref<'a, T>(
     im_arr: T,
     ker_height: usize,
     ker_width: usize,
@@ -172,8 +164,11 @@ where
 
 /// Performs a convolution on the given image data using this layers parameters.
 /// We always convolve on flattened images and expect the input array in im2col
-/// style format (read more here).
-/// <https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/convolution_layer/making_faster>
+/// style format.
+///
+/// Read more here:
+/// - <https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/convolution_layer/making_faster>
+///
 /// Input:
 /// -----------------------------------------------
 /// - kernel_weights: weights of shape (F, C, HH, WW)
@@ -185,7 +180,7 @@ where
 
 /// Returns:
 /// -----------------------------------------------
-/// - out: Output data, of shape (F, H', W') where H' and W' are given by
+/// - out: Output data, of shape (F, H', W')
 pub fn conv2d<'a, T, V>(
     kernel_weights: T,
     im2d: V,

@@ -1,9 +1,9 @@
-/// Transposed convolutions (also wrongly called deconvolution layers)
-/// are learnable upsampling maps.
-/// More can be read here:
-/// - https://datascience.stackexchange.com/questions/6107/what-are-deconvolutional-layers
-/// - https://github.com/akutzer/numpy_cnn/blob/master/CNN/Layer/TransposedConv.py
-/// - https://ieee.nitk.ac.in/blog/deconv/
+//! Module that contains transposed convolutions (also called deconvolution layers).
+//!
+//! More can be read here:
+//! - <https://datascience.stackexchange.com/questions/6107/what-are-deconvolutional-layers>
+//! - <https://github.com/akutzer/numpy_cnn/blob/master/CNN/Layer/TransposedConv.py>
+//! - <https://ieee.nitk.ac.in/blog/deconv/>
 use crate::{
     convolutions::{get_padding_size, im2col_ref, ConvolutionLayer},
     ConvKernel, ImagePrecision, InternalDataRepresentation, Padding,
@@ -38,9 +38,7 @@ impl TransposedConvolutionLayer {
         }
     }
 
-    /// Performs a transposed convolution on the input image. This upsamples the image.
-    /// More explanation can be read here:
-    /// - <https://datascience.stackexchange.com/questions/6107/what-are-deconvolutional-layers>
+    /// Analog to conv_transpose2d.
     pub fn transposed_convolve(
         &self,
         image: &InternalDataRepresentation,
@@ -55,6 +53,24 @@ impl TransposedConvolutionLayer {
     }
 }
 
+/// Performs a transposed convolution on the input image. This upsamples the image.
+///
+/// More explanation can be read here:
+/// - <https://datascience.stackexchange.com/questions/6107/what-are-deconvolutional-layers>
+///
+/// NOTE: THERE IS A CHANGE IN KERNEL DIMENSIONS FOR CONV TRANSPOSED
+/// Input:
+/// -----------------------------------------------
+/// - im2d: Input data of shape (C, H, W)
+/// - kernel_weights: Filter weights of shape (C, F, HH, WW) // DIFFERENT from CONV2D
+/// -----------------------------------------------
+/// - 'stride': The number of pixels between adjacent receptive fields in the
+///     horizontal and vertical directions, must be int
+/// - 'pad': "Same" or "Valid"
+
+/// Returns:
+/// -----------------------------------------------
+/// - out: Output data, of shape (F, H', W')
 pub fn conv_transpose2d<'a, T, V>(
     kernel_weights: T,
     im2d: V,
@@ -65,21 +81,6 @@ where
     // This trait bound ensures that kernel and im2d can be passed as owned array or view.
     // AsArray just ensures that im2d can be converted to an array view via ".into()".
     // Read more here: https://docs.rs/ndarray/0.12.1/ndarray/trait.AsArray.html
-
-    // NOTE: THERE IS A CHANGE IN KERNEL DIMENSIONS FOR CONV TRANSPOSED
-    // Input:
-    // -----------------------------------------------
-    // - x: Input data of shape (C, H, W)
-    // - w: Filter weights of shape (C, F, HH, WW) // DIFFERENT from CONV2D
-    // - b: Biases, of shape (F,)
-    // -----------------------------------------------
-    // - 'stride': The number of pixels between adjacent receptive fields in the
-    //     horizontal and vertical directions, must be int
-    // - 'pad': "Same" or "Valid"
-
-    // Returns a tuple of:
-    // -----------------------------------------------
-    // - out: Output data, of shape (F, H', W') where H' and W' are given by
     V: AsArray<'a, ImagePrecision, Ix3>,
     T: AsArray<'a, ImagePrecision, Ix4>,
 {
