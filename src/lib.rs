@@ -28,7 +28,7 @@
 //!
 //! let conv_layer = ConvolutionLayer::new(kernel.clone(), 1, Padding::Valid);
 //! let output_layer: Array3<f32> = conv_layer.convolve(&input);
-//! let output_free = conv2d(kernel, &input, Padding::Valid, 1);
+//! let output_free = conv2d(&kernel, &input, Padding::Valid, 1);
 //!
 //! println!("Layer: {:?}", output_layer);
 //! println!("Free: {:?}", output_free);

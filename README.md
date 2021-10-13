@@ -1,5 +1,5 @@
 # convolutions-rs
-convolutions-rs is a that provides a fast, well-tested convolutions library for machine learning written entirely in Rust with minimal dependencies. In particular, this is the first convolutions crate that has absolutely no dependencies on native C libraries. We provide both transposed convolutions (also called deconvolutions), as well as normal convolutions.
+convolutions-rs is a crate that provides a fast, well-tested convolutions library for machine learning written entirely in Rust with minimal dependencies. In particular, this is the first convolutions crate that has absolutely no dependencies on native C libraries. We provide both transposed convolutions (also called deconvolutions), as well as normal convolutions.
 
 This crate has been developed in the course of the ZipNet project (https://github.com/Conzel/zipnet), where we required a C-free implementation of convolutions in order to compile our code to WebASM.
 
@@ -35,7 +35,7 @@ let kernel: Array4<f32> = Array::from_shape_vec(
 
 let conv_layer = ConvolutionLayer::new(kernel.clone(), 1, Padding::Valid);
 let output_layer: Array3<f32> = conv_layer.convolve(&input);
-let output_free = conv2d(kernel, &input, Padding::Valid, 1);
+let output_free = conv2d(&kernel, &input, Padding::Valid, 1);
 
 println!("Layer: {:?}", output_layer);
 println!("Free: {:?}", output_free);
