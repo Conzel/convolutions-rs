@@ -40,7 +40,7 @@ impl TransposedConvolutionLayer {
 
     /// Performs a transposed convolution on the input image. This upsamples the image.
     /// More explanation can be read here:
-    /// - https://datascience.stackexchange.com/questions/6107/what-are-deconvolutional-layers
+    /// - <https://datascience.stackexchange.com/questions/6107/what-are-deconvolutional-layers>
     pub fn transposed_convolve(
         &self,
         image: &InternalDataRepresentation,

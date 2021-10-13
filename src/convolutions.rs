@@ -173,7 +173,7 @@ where
 /// Performs a convolution on the given image data using this layers parameters.
 /// We always convolve on flattened images and expect the input array in im2col
 /// style format (read more here).
-/// https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/convolution_layer/making_faster
+/// <https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/convolution_layer/making_faster>
 /// Input:
 /// -----------------------------------------------
 /// - kernel_weights: weights of shape (F, C, HH, WW)
