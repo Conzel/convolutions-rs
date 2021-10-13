@@ -45,7 +45,7 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
     }
 
     /// Analog to conv2d.
-    pub fn convolve(self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
+    pub fn convolve(&self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
         conv2d(&self.kernel, image, self.padding, self.stride)
     }
 }
