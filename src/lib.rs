@@ -34,15 +34,13 @@
 //! println!("Free: {:?}", output_free);
 //! ```
 
-use ndarray::Array3;
+use ndarray::{Array3, Array4};
 
 pub mod convolutions;
 pub mod transposed_convolutions;
 
-pub type WeightPrecision = f32;
-pub type ImagePrecision = f32;
-pub type InternalDataRepresentation = Array3<f32>;
-pub type ConvKernel = ndarray::Array4<WeightPrecision>;
+pub type DataRepresentation<F> = Array3<F>;
+pub type ConvKernel<F> = Array4<F>;
 
 /// Padding (specific way of adding zeros to the input matrix) kind used in the convolution.
 #[derive(PartialEq, Debug, Clone, Copy)]

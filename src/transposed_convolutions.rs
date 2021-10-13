@@ -6,20 +6,25 @@
 //! - <https://ieee.nitk.ac.in/blog/deconv/>
 use crate::{
     convolutions::{get_padding_size, im2col_ref, ConvolutionLayer},
-    ConvKernel, ImagePrecision, InternalDataRepresentation, Padding,
+    ConvKernel, DataRepresentation, Padding,
 };
 use ndarray::*;
+use num_traits::Float;
 
 /// Analog to a Convolution Layer
-pub struct TransposedConvolutionLayer {
-    convolution_layer: ConvolutionLayer,
+pub struct TransposedConvolutionLayer<F: Float> {
+    convolution_layer: ConvolutionLayer<F>,
 }
 
-impl TransposedConvolutionLayer {
+impl<F: 'static + Float> TransposedConvolutionLayer<F> {
     /// Creates new transposed_convolutionLayer. The weights are given in
     /// Pytorch layout.
     /// (in channels, out channels, kernel_height, kernel_width)
-    pub fn new(weights: ConvKernel, stride: usize, padding: Padding) -> TransposedConvolutionLayer {
+    pub fn new(
+        weights: ConvKernel<F>,
+        stride: usize,
+        padding: Padding,
+    ) -> TransposedConvolutionLayer<F> {
         TransposedConvolutionLayer {
             convolution_layer: ConvolutionLayer::new(weights, stride, padding),
         }
@@ -29,20 +34,17 @@ impl TransposedConvolutionLayer {
     /// Tensorflow layout.
     /// (kernel height, kernel width, out channels, in channels)
     pub fn new_tf(
-        weights: ConvKernel,
+        weights: ConvKernel<F>,
         stride: usize,
         padding: Padding,
-    ) -> TransposedConvolutionLayer {
+    ) -> TransposedConvolutionLayer<F> {
         TransposedConvolutionLayer {
             convolution_layer: ConvolutionLayer::new_tf(weights, stride, padding),
         }
     }
 
     /// Analog to conv_transpose2d.
-    pub fn transposed_convolve(
-        &self,
-        image: &InternalDataRepresentation,
-    ) -> InternalDataRepresentation {
+    pub fn transposed_convolve(&self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
         let output = conv_transpose2d(
             &self.convolution_layer.kernel,
             &image.view(),
@@ -71,24 +73,24 @@ impl TransposedConvolutionLayer {
 /// Returns:
 /// -----------------------------------------------
 /// - out: Output data, of shape (F, H', W')
-pub fn conv_transpose2d<'a, T, V>(
+pub fn conv_transpose2d<'a, T, V, F: 'static + Float>(
     kernel_weights: T,
     im2d: V,
     padding: Padding,
     stride: usize,
-) -> Array3<ImagePrecision>
+) -> Array3<F>
 where
     // This trait bound ensures that kernel and im2d can be passed as owned array or view.
     // AsArray just ensures that im2d can be converted to an array view via ".into()".
     // Read more here: https://docs.rs/ndarray/0.12.1/ndarray/trait.AsArray.html
-    V: AsArray<'a, ImagePrecision, Ix3>,
-    T: AsArray<'a, ImagePrecision, Ix4>,
+    V: AsArray<'a, F, Ix3>,
+    T: AsArray<'a, F, Ix4>,
 {
     // Initialisations
-    let im2d_arr: ArrayView3<f32> = im2d.into();
-    let kernel_weights_arr: ArrayView4<f32> = kernel_weights.into();
-    let output: Array3<ImagePrecision>;
-    let im2d_stride: Array3<ImagePrecision>;
+    let im2d_arr: ArrayView3<F> = im2d.into();
+    let kernel_weights_arr: ArrayView4<F> = kernel_weights.into();
+    let output: Array3<F>;
+    let im2d_stride: Array3<F>;
     let new_im_height: usize;
     let new_im_width: usize;
     let im_channel_stride: usize;
@@ -117,7 +119,7 @@ where
 
     // weights.reshape(F, HH*WW*C)
     // loop over each filter and flip the kernel and append it back
-    let mut filter_col: Array2<ImagePrecision> =
+    let mut filter_col: Array2<F> =
         Array::zeros((num_channels_out, kernel_height * kernel_width * num_filters));
     for i in 0..num_channels_out {
         let patch_kernel_weights = kernel_weights_arr.slice(s![i, .., .., ..]);
@@ -145,8 +147,7 @@ where
         // ASSUMPTION: stride[0] == stride[1]
         let stride_h = stride * im_height;
         let stride_w = stride * im_width;
-        let mut im2d_stride_full: Array3<ImagePrecision> =
-            Array::zeros((im_channel, stride_h, stride_w));
+        let mut im2d_stride_full: Array3<F> = Array::zeros((im_channel, stride_h, stride_w));
         im2d_stride_full
             .slice_mut(s![.., ..;stride, ..;stride])
             .assign(&im2d_arr);
@@ -167,7 +168,7 @@ where
     // fn:im2col() for with padding always
     let pad_h = kernel_height - 1;
     let pad_w = kernel_width - 1;
-    let mut im2d_arr_pad: Array3<ImagePrecision> = Array::zeros((
+    let mut im2d_arr_pad: Array3<F> = Array::zeros((
         im_channel_stride,
         im_height_stride + pad_h + pad_h,
         im_width_stride + pad_w + pad_w,

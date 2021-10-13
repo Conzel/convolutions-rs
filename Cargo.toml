@@ -1,6 +1,6 @@
 [package]
 name = "convolutions-rs"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2018"
 license = "MIT"
 description = "Fast, minimal dependency, completely Rust implementation of convolutions for machine learning."
@@ -11,3 +11,4 @@ readme = "README.md"
 
 [dependencies]
 ndarray = "0.15.3"
+num-traits = "0.2.14"

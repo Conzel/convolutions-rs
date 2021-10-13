@@ -2,29 +2,26 @@
 //!
 //! More can be read here:
 //! - <https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53?gi=f4a37beea40b>
-use crate::{ImagePrecision, InternalDataRepresentation, Padding, WeightPrecision};
+use crate::{DataRepresentation, Padding};
 use ndarray::*;
+use num_traits::Float;
 
 /// Rust implementation of a convolutional layer.
 /// The weight matrix shall have dimension (in that order)
 /// (input channels, output channels, kernel width, kernel height),
 /// to comply with the order in which pytorch weights are saved.
-pub struct ConvolutionLayer {
+pub struct ConvolutionLayer<F: Float> {
     /// Weight matrix of the kernel
-    pub(in crate) kernel: Array4<WeightPrecision>,
+    pub(in crate) kernel: Array4<F>,
     pub(in crate) stride: usize,
     pub(in crate) padding: Padding,
 }
 
-impl ConvolutionLayer {
+impl<F: 'static + Float> ConvolutionLayer<F> {
     /// Creates new convolution layer. The weights are given in
     /// Pytorch layout.
     /// (out channels, in channels, kernel height, kernel width)
-    pub fn new(
-        weights: Array4<WeightPrecision>,
-        stride: usize,
-        padding: Padding,
-    ) -> ConvolutionLayer {
+    pub fn new(weights: Array4<F>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
         assert!(stride > 0, "Stride of 0 passed");
 
         ConvolutionLayer {
@@ -37,22 +34,18 @@ impl ConvolutionLayer {
     /// Creates new convolution layer. The weights are given in
     /// Tensorflow layout.
     /// (kernel height, kernel width, in channels, out channels)
-    pub fn new_tf(
-        weights: Array4<WeightPrecision>,
-        stride: usize,
-        padding: Padding,
-    ) -> ConvolutionLayer {
+    pub fn new_tf(weights: Array4<F>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
         let permuted_view = weights.view().permuted_axes([3, 2, 0, 1]);
         // Hack to fix the memory layout, permuted axes makes a
         // col major array / non-contiguous array from weights
-        let permuted_array: Array4<WeightPrecision> =
+        let permuted_array: Array4<F> =
             Array::from_shape_vec(permuted_view.dim(), permuted_view.iter().copied().collect())
                 .unwrap();
         ConvolutionLayer::new(permuted_array, stride, padding)
     }
 
     /// Analog to conv2d.
-    pub fn convolve(self, image: &InternalDataRepresentation) -> InternalDataRepresentation {
+    pub fn convolve(self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
         conv2d(&self.kernel, image, self.padding, self.stride)
     }
 }
@@ -94,7 +87,7 @@ pub(in crate) fn get_padding_size(
     )
 }
 
-pub(in crate) fn im2col_ref<'a, T>(
+pub(in crate) fn im2col_ref<'a, T, F: 'a + Float>(
     im_arr: T,
     ker_height: usize,
     ker_width: usize,
@@ -102,7 +95,7 @@ pub(in crate) fn im2col_ref<'a, T>(
     im_width: usize,
     im_channel: usize,
     stride: usize,
-) -> Array2<ImagePrecision>
+) -> Array2<F>
 where
     // Args:
     //   im_arr: image matrix to be translated into columns, (C,H,W)
@@ -114,12 +107,12 @@ where
     // Returns:
     //   col: (new_h*new_w,hh*ww*C) matrix, each column is a cube that will convolve with a filter
     //         new_h = (H-hh) // stride + 1, new_w = (W-ww) // stride + 1
-    T: AsArray<'a, ImagePrecision, Ix3>,
+    T: AsArray<'a, F, Ix3>,
 {
-    let im2d_arr: ArrayView3<f32> = im_arr.into();
+    let im2d_arr: ArrayView3<F> = im_arr.into();
     let new_h = (im_height - ker_height) / stride + 1;
     let new_w = (im_width - ker_width) / stride + 1;
-    let mut cols_img: Array2<ImagePrecision> =
+    let mut cols_img: Array2<F> =
         Array::zeros((new_h * new_w, im_channel * ker_height * ker_width));
     let mut cont = 0_usize;
     for i in 1..new_h + 1 {
@@ -129,7 +122,7 @@ where
                 (i - 1) * stride..((i - 1) * stride + ker_height),
                 (j - 1) * stride..((j - 1) * stride + ker_width),
             ]);
-            let patchrow_unwrap: Array1<f32> = Array::from_iter(patch.map(|a| *a));
+            let patchrow_unwrap: Array1<F> = Array::from_iter(patch.map(|a| *a));
 
             cols_img.row_mut(cont).assign(&patchrow_unwrap);
             cont += 1;
@@ -138,19 +131,18 @@ where
     cols_img
 }
 
-fn col2im_ref<'a, T>(
+fn col2im_ref<'a, T, F: 'a + Float>(
     mat: T,
     height_prime: usize,
     width_prime: usize,
     _channels: usize,
-) -> Array3<ImagePrecision>
+) -> DataRepresentation<F>
 where
-    T: AsArray<'a, ImagePrecision, Ix2>,
+    T: AsArray<'a, F, Ix2>,
 {
-    let img_vec: ArrayView2<f32> = mat.into();
+    let img_vec: ArrayView2<F> = mat.into();
     let filter_axis = img_vec.len_of(Axis(1));
-    let mut img_mat: Array3<ImagePrecision> =
-        Array::zeros((filter_axis, height_prime, width_prime));
+    let mut img_mat: Array3<F> = Array::zeros((filter_axis, height_prime, width_prime));
     // C = 1
     for i in 0..filter_axis {
         let col = img_vec.slice(s![.., i]).to_vec();
@@ -181,23 +173,23 @@ where
 /// Returns:
 /// -----------------------------------------------
 /// - out: Output data, of shape (F, H', W')
-pub fn conv2d<'a, T, V>(
+pub fn conv2d<'a, T, V, F: 'static + Float>(
     kernel_weights: T,
     im2d: V,
     padding: Padding,
     stride: usize,
-) -> Array3<ImagePrecision>
+) -> DataRepresentation<F>
 where
     // This trait bound ensures that kernel and im2d can be passed as owned array or view.
     // AsArray just ensures that im2d can be converted to an array view via ".into()".
     // Read more here: https://docs.rs/ndarray/0.12.1/ndarray/trait.AsArray.html
-    V: AsArray<'a, ImagePrecision, Ix3>,
-    T: AsArray<'a, ImagePrecision, Ix4>,
+    V: AsArray<'a, F, Ix3>,
+    T: AsArray<'a, F, Ix4>,
 {
     // Initialisations
-    let im2d_arr: ArrayView3<f32> = im2d.into();
-    let kernel_weights_arr: ArrayView4<f32> = kernel_weights.into();
-    let im_col: Array2<ImagePrecision>; // output of fn: im2col_ref()
+    let im2d_arr: ArrayView3<F> = im2d.into();
+    let kernel_weights_arr: ArrayView4<F> = kernel_weights.into();
+    let im_col: Array2<F>; // output of fn: im2col_ref()
     let new_im_height: usize;
     let new_im_width: usize;
     let weight_shape = kernel_weights_arr.shape();
@@ -243,7 +235,7 @@ where
         // https://mmuratarat.github.io/2019-01-17/implementing-padding-schemes-of-tensorflow-in-python
         let (pad_num_h, pad_num_w, pad_top, pad_bottom, pad_left, pad_right) =
             get_padding_size(im_height, im_width, stride, kernel_height, kernel_width);
-        let mut im2d_arr_pad: Array3<ImagePrecision> = Array::zeros((
+        let mut im2d_arr_pad: Array3<F> = Array::zeros((
             num_channels_out,
             im_height + pad_num_h,
             im_width + pad_num_w,
