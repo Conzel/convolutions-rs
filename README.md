@@ -7,8 +7,8 @@ This crate has been developed in the course of the ZipNet project (https://githu
 - [x] Minimal dependencies, especially no C-dependencies
 - [x] Extensively tested through randomly generated unit tests
 - [x] 100% compatible with Tensorflow and Pytorch implementations
+- [x] Generics to ensure smooth usage
 - [ ] Speed verified by benchmarking
-- [ ] Generics to ensure smooth usage
 
 ## Usage
 As mentioned, this package provides normal convolutions as well as transposed convolutions. We provide both in the form of free functions as well as something resembling a neural network layer. This crate also requires ndarray to use the functions, as input and output are in the form of ndarrays.
