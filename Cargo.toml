@@ -1,6 +1,6 @@
 [package]
 name = "convolutions-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 license = "MIT"
 description = "Fast, minimal dependency, completely Rust implementation of convolutions for machine learning."
