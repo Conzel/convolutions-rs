@@ -10,7 +10,7 @@ This crate has been developed in the course of the ZipNet project (https://githu
 - [x] Generics to ensure smooth usage
 - [x] Speed verified by benchmarking
 
-As of now, this crate is as fast as Pytorch on small images, but has a noticeable slowdown on large and medium images (takes ~20-50x as much time). We are still reaonsably fast enough for research/sample applications, but we aim to improve the speed to get close to PyTorch. Benchmarks can be found at (https://github.com/Conzel/convolutions-rs-benchmarks/).
+As of now, this crate is as fast as Pytorch on small images, but has a noticeable slowdown on large and medium images (takes ~20-50x as much time). We are still reaonsably fast enough for research/sample applications, but we aim to improve the speed to get close to PyTorch. Benchmarks can be found at https://github.com/Conzel/convolutions-rs-benchmarks/.
 
 ## Usage
 As mentioned, this package provides normal convolutions as well as transposed convolutions. We provide both in the form of free functions as well as something resembling a neural network layer. This crate also requires ndarray to use the functions, as input and output are in the form of ndarrays.
