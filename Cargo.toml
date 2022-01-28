@@ -12,3 +12,4 @@ readme = "README.md"
 [dependencies]
 ndarray = "0.15.3"
 num-traits = "0.2.14"
+ndarray-npy = "0.8.1"
