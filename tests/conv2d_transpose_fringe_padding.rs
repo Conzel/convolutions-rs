@@ -36,6 +36,8 @@ fn test_problematic_shape_1() {
     let input: Array3<f32> = read_npy("y_hat.npy").unwrap();
     let layer = TransposedConvolutionLayer::new_tf(kernel, 2, Padding::Same);
     let our_output = layer.transposed_convolve(&input);
+    // println!("{:?}", output);
+    // println!("{:?}", our_output);
     // generated via
     // np.save("output.npy", tf_to_pt((tf.nn.conv2d_transpose(y_hat_tf, weight, out1_tf.shape, strides
     // ...: =2, padding="SAME").numpy())))

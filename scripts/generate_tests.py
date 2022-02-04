@@ -208,7 +208,7 @@ def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, u
     objects = []
     for im_shape, ker_shape in list(itertools.product(img_shapes, kernel_shapes)):
         if not transpose and im_shape[0] != ker_shape[1] or transpose and im_shape[0] != ker_shape[0]:
-            continue  # shapes are not compatible, channel size missmatch
+            continue  # shapes are not compatible, channel size mismatch
 
         for i in range(num_arrays_per_case):
             im = np.random.rand(*im_shape).astype(dtype=np.float32)
@@ -311,8 +311,10 @@ def main():
     kernel_shapes = [(2, 1, 3, 4), (2, 1, 5, 5),
                             (2, 3, 3, 3), (2, 3, 5, 5)]
 
-    img_shapes_trans = [(2, 5, 4), (2, 4, 3), (2, 6, 6), (1, 4, 5), (1, 3, 3)]
-    kernel_shapes_trans = [(2, 1, 4, 4), (1, 1, 4, 4), (2, 1, 3, 3)]
+    # img_shapes_trans = [(2, 5, 4), (2, 4, 3), (2, 6, 6), (1, 4, 5), (1, 3, 3)]
+    # kernel_shapes_trans = [(2, 1, 4, 4), (1, 1, 4, 4), (2, 1, 3, 3)]
+    img_shapes_trans = [(1,3,3), (3,2,2)]
+    kernel_shapes_trans = [(1,2,3,3), (1,2,5,5), (3,2,4,4), (3,2, 6,6)]
 
     np.set_printoptions(suppress=True)
     # loading Jinja with the random array test template
@@ -323,6 +325,7 @@ def main():
     template = env.get_template("test_py_impl_random_arrays_template.rs")
     ml_test_folder = os.path.join(project_root, "tests")
 
+    '''
     # writing out the conv2d test cases
     conv2d_test_case = conv2d_random_array_test(
         img_shapes, kernel_shapes)
@@ -377,13 +380,14 @@ def main():
     write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
                        "conv2d_transpose_torch")
 
+    '''
     # writing out the conv2d_tranposed test cases
     conv2d_transpose_test_case = conv2d_random_array_test(
         img_shapes_trans, kernel_shapes_trans, transpose=True, padding="SAME", compare_impls=False, stride=2)
     conv2d_transpose_test_content = template.render(
         random_tests=[conv2d_transpose_test_case], file=__file__)
     write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_stride2")
+                       "TESTconv2d_transpose_stride2")
 
 
 if __name__ == "__main__":

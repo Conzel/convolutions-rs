@@ -195,13 +195,19 @@ where
     // NOTE: The kernel strides across the image at 1 regardless of the stride we provide
 
     let filter_transpose = filter_col_flatten.t();
-    let mul = im_col.dot(&filter_transpose); // + bias_m
+    let mut mul = im_col.dot(&filter_transpose); // + bias_m
 
     if padding == Padding::Same {
-        let mul_reshape = mul
+        // let mul_reshape = mul
+        //     .into_shape((new_im_height, new_im_width, num_filters))
+        //     .unwrap()
+        //     .into_owned();
+       
+        let mul_transpose = mul.t();
+        let mul_reshape = mul_transpose
             .into_shape((num_filters, new_im_height, new_im_width))
             .unwrap()
-            .into_owned();
+            .into_owned();  
         let (_, _, pad_top, pad_bottom, pad_left, pad_right) = get_padding_size(
             im_height * stride,
             im_width * stride,
@@ -216,6 +222,7 @@ where
             .slice(s![.., pad_top..pad_bottom_int, pad_left..pad_right_int])
             .into_owned();
     } else {
+        mul.swap_axes(0, 1);
         output = mul
             .into_shape((num_filters, new_im_height, new_im_width))
             .unwrap()
