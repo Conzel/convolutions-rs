@@ -10,7 +10,7 @@ fn arr_allclose<D: Dimension>(current: &Array<f32, D>, target: &Array<f32, D>) -
         current.shape(),
         target.shape()
     );
-    (current - target).map(|x| (*x as f32).abs()).sum() < 1e-3
+    (current - target).map(|x| (*x as f32).abs()).sum() < 1e-2
 }
 
 fn arr_allclose_64<D: Dimension>(current: &Array<f64, D>, target: &Array<f64, D>) -> bool {
@@ -21,7 +21,7 @@ fn arr_allclose_64<D: Dimension>(current: &Array<f64, D>, target: &Array<f64, D>
         current.shape(),
         target.shape()
     );
-    (current - target).map(|x| (*x as f32).abs()).sum() < 1e-3
+    (current - target).map(|x| (*x as f64).abs()).sum() < 1e-3
 }
 
 // This is an example we saw in live:
@@ -55,13 +55,13 @@ fn test_problematic_shape_1() {
 // same shape as in the shape_1_test, but different random values
 #[test]
 fn test_problematic_shape_1_random() {
-    let kernel: Array4<f32> = read_npy("kernel_rand_same_shape.npy").unwrap();
-    let output: Array3<f32> = read_npy("output_rand_same_shape.npy").unwrap();
-    let input: Array3<f32> = read_npy("input_rand_same_shape.npy").unwrap();
+    let kernel: Array4<f64> = read_npy("kernel_rand_same_shape.npy").unwrap();
+    let output: Array3<f64> = read_npy("output_rand_same_shape.npy").unwrap();
+    let input: Array3<f64> = read_npy("input_rand_same_shape.npy").unwrap();
     let layer = TransposedConvolutionLayer::new_tf(kernel, 2, Padding::Same);
     let our_output = layer.transposed_convolve(&input);
     assert!(
-        arr_allclose(&output, &our_output),
+        arr_allclose_64(&output, &our_output),
         "{:?} and {:?} not identical",
         output,
         our_output
