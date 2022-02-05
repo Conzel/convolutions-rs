@@ -138,10 +138,11 @@ where
                 .assign(&weights_reverse);
         }
     }
-
+    filter_col.swap_axes(0, 1);
     let filter_col_flatten = filter_col
-        .into_shape((num_filters, kernel_height * kernel_width * num_channels_out))
-        .unwrap();
+        .into_shape((num_filters,  num_channels_out * kernel_height * kernel_width))
+        .unwrap()
+        .into_owned();
 
     // STRIDE > 1
     if stride != 1 {
@@ -225,9 +226,6 @@ where
             .into_shape((num_filters, new_im_height, new_im_width))
             .unwrap()
             .into_owned();
-    };
-    // output = mul_reshape
-    //     .unwrap()
-    //     .into_owned();  
+    }; 
     output
 }
