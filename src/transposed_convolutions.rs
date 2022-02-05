@@ -118,7 +118,7 @@ where
     new_im_width = (im_width - 1) * stride + kernel_width;
 
     // weights.reshape(F, HH*WW*C)
-    // loop over each filter and flip the kernel and append it back
+    // loop over F and C ; flip the kernel and append it back
     let mut filter_col: Array3<F> =
         Array::zeros((num_channels_out, num_filters, kernel_height * kernel_width));
     for i in 0..num_channels_out {
