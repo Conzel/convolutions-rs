@@ -131,18 +131,16 @@ where
             //FLIP
             weights_flatten.reverse();
             let weights_reverse =
-                Array::from_shape_vec(kernel_height * kernel_width, weights_flatten)
-                    .unwrap();
+                Array::from_shape_vec(kernel_height * kernel_width, weights_flatten).unwrap();
             filter_col
                 .slice_mut(s![i, j, 0..kernel_height * kernel_width])
                 .assign(&weights_reverse);
         }
     }
     filter_col.swap_axes(0, 1);
-    let filter_col_flatten = filter_col
-        .into_shape((num_filters,  num_channels_out * kernel_height * kernel_width))
-        .unwrap()
-        .into_owned();
+    let target_shape = (num_filters, num_channels_out * kernel_height * kernel_width);
+    let filter_col_flatten =
+        Array::from_shape_vec(target_shape, filter_col.iter().map(|a| *a).collect()).unwrap();
 
     // STRIDE > 1
     if stride != 1 {
@@ -204,7 +202,7 @@ where
         let mut mul_reshape = mul
             .into_shape((new_im_height, new_im_width, num_filters))
             .unwrap()
-            .into_owned();  
+            .into_owned();
         mul_reshape.swap_axes(0, 2);
         mul_reshape.swap_axes(1, 2);
         let (_, _, pad_top, pad_bottom, pad_left, pad_right) = get_padding_size(
@@ -226,6 +224,6 @@ where
             .into_shape((num_filters, new_im_height, new_im_width))
             .unwrap()
             .into_owned();
-    }; 
+    };
     output
 }
