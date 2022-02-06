@@ -1,0 +1,7 @@
+name: convolutions-rs
+channels:
+  - conda-forge
+dependencies:
+  - tensorflow=2.7.*
+  - jinja2=3.*
+  - pytorch=1.10.*
