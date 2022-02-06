@@ -31,9 +31,9 @@ fn arr_allclose_64<D: Dimension>(current: &Array<f64, D>, target: &Array<f64, D>
 #[test]
 fn test_problematic_shape_1() {
     // Testing the example we saw in tensorflow
-    let kernel: Array4<f32> = read_npy("kernel.npy").unwrap();
-    let output: Array3<f32> = read_npy("output.npy").unwrap();
-    let input: Array3<f32> = read_npy("y_hat.npy").unwrap();
+    let kernel: Array4<f32> = read_npy("tests/npy_files/kernel.npy").unwrap();
+    let output: Array3<f32> = read_npy("tests/npy_files/output.npy").unwrap();
+    let input: Array3<f32> = read_npy("tests/npy_files/y_hat.npy").unwrap();
     let layer = TransposedConvolutionLayer::new_tf(kernel, 2, Padding::Same);
     let our_output = layer.transposed_convolve(&input);
     // generated via
@@ -53,9 +53,9 @@ fn test_problematic_shape_1() {
 // same shape as in the shape_1_test, but different random values
 #[test]
 fn test_problematic_shape_1_random() {
-    let kernel: Array4<f64> = read_npy("kernel_rand_same_shape.npy").unwrap();
-    let output: Array3<f64> = read_npy("output_rand_same_shape.npy").unwrap();
-    let input: Array3<f64> = read_npy("input_rand_same_shape.npy").unwrap();
+    let kernel: Array4<f64> = read_npy("tests/npy_files/kernel_rand_same_shape.npy").unwrap();
+    let output: Array3<f64> = read_npy("tests/npy_files/output_rand_same_shape.npy").unwrap();
+    let input: Array3<f64> = read_npy("tests/npy_files/input_rand_same_shape.npy").unwrap();
     let layer = TransposedConvolutionLayer::new_tf(kernel, 2, Padding::Same);
     let our_output = layer.transposed_convolve(&input);
     assert!(
@@ -69,9 +69,9 @@ fn test_problematic_shape_1_random() {
 // We have been
 #[test]
 fn test_problematic_shape_2() {
-    let kernel: Array4<f64> = read_npy("simple_weight.npy").unwrap();
-    let output: Array3<f64> = read_npy("output_simple_example.npy").unwrap();
-    let input: Array3<f64> = read_npy("simple_example_input.npy").unwrap();
+    let kernel: Array4<f64> = read_npy("tests/npy_files/simple_weight.npy").unwrap();
+    let output: Array3<f64> = read_npy("tests/npy_files/output_simple_example.npy").unwrap();
+    let input: Array3<f64> = read_npy("tests/npy_files/simple_example_input.npy").unwrap();
     let layer = TransposedConvolutionLayer::new_tf(kernel, 2, Padding::Same);
     let our_output = layer.transposed_convolve(&input);
     assert!(
@@ -86,9 +86,9 @@ fn test_problematic_shape_2() {
 // Values hand generated like in the above tests, but with "nicer" shapes
 fn test_sanity_2() {
     // shapes that we have already known to work from the conv2d_transpose_stride2 test
-    let kernel: Array4<f64> = read_npy("weight1.npy").unwrap();
-    let output: Array3<f64> = read_npy("out1.npy").unwrap();
-    let input: Array3<f64> = read_npy("x1.npy").unwrap();
+    let kernel: Array4<f64> = read_npy("tests/npy_files/weight1.npy").unwrap();
+    let output: Array3<f64> = read_npy("tests/npy_files/out1.npy").unwrap();
+    let input: Array3<f64> = read_npy("tests/npy_files/x1.npy").unwrap();
     let layer = TransposedConvolutionLayer::new_tf(kernel, 2, Padding::Same);
     let our_output = layer.transposed_convolve(&input);
     assert!(
