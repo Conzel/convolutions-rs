@@ -22,7 +22,7 @@ impl<F: 'static + Float> TransposedConvolutionLayer<F> {
     /// (in channels, out channels, kernel_height, kernel_width)
     pub fn new(
         weights: ConvKernel<F>,
-        bias: Array2<F>,
+        bias: Option<Array2<F>>,
         stride: usize,
         padding: Padding,
     ) -> TransposedConvolutionLayer<F> {
@@ -36,7 +36,7 @@ impl<F: 'static + Float> TransposedConvolutionLayer<F> {
     /// (kernel height, kernel width, out channels, in channels)
     pub fn new_tf(
         weights: ConvKernel<F>,
-        bias: Array2<F>,
+        bias: Option<Array2<F>>,
         stride: usize,
         padding: Padding,
     ) -> TransposedConvolutionLayer<F> {

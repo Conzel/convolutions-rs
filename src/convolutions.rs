@@ -13,7 +13,7 @@ use num_traits::Float;
 pub struct ConvolutionLayer<F: Float> {
     /// Weight matrix of the kernel
     pub(in crate) kernel: Array4<F>,
-    pub(in crate) bias: Array2<F>,
+    pub(in crate) bias: Option<Array2<F>>,
     pub(in crate) stride: usize,
     pub(in crate) padding: Padding,
 }
@@ -23,12 +23,15 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
     /// The weights are given in Pytorch layout.
     /// (out channels, in channels, kernel height, kernel width)
     /// Bias: (output height * output width, 1)
-    pub fn new(weights: Array4<F>, bias: Array2<F>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
+    pub fn new(weights: Array4<F>, bias_array: Option<Array2<F>>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
         assert!(stride > 0, "Stride of 0 passed");
-
+        // match bias_array{
+        //     Some(x) => x,
+        //     None => None,
+        // }
         ConvolutionLayer {
             kernel: weights,
-            bias,
+            bias:bias_array,
             stride,
             padding,
         }
@@ -37,19 +40,19 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
     /// Creates new convolution layer. The weights are given in
     /// Tensorflow layout.
     /// (kernel height, kernel width, in channels, out channels)
-    pub fn new_tf(weights: Array4<F>, bias: Array2<F>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
+    pub fn new_tf(weights: Array4<F>, bias: Option<Array2<F>>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
         let permuted_view = weights.view().permuted_axes([3, 2, 0, 1]);
         // Hack to fix the memory layout, permuted axes makes a
         // col major array / non-contiguous array from weights
         let permuted_array: Array4<F> =
             Array::from_shape_vec(permuted_view.dim(), permuted_view.iter().copied().collect())
                 .unwrap();
-        ConvolutionLayer::new(permuted_array,bias, stride, padding)
+        ConvolutionLayer::new(permuted_array, bias, stride, padding)
     }
 
     /// Analog to conv2d.
     pub fn convolve(&self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
-        conv2d(&self.kernel, &self.bias, image, self.padding, self.stride)
+        conv2d(&self.kernel, self.bias.clone(), image, self.padding, self.stride)
     }
 }
 
@@ -176,9 +179,9 @@ where
 /// Returns:
 /// -----------------------------------------------
 /// - out: Output data, of shape (F, H', W')
-pub fn conv2d<'a, T, B, V, F: 'static + Float>(
+pub fn conv2d<'a, T, V, F: 'static + Float>(
     kernel_weights: T,
-    bias:B,
+    bias: Option<Array2<F>>,
     im2d: V,
     padding: Padding,
     stride: usize,
@@ -188,14 +191,13 @@ where
     // AsArray just ensures that im2d can be converted to an array view via ".into()".
     // Read more here: https://docs.rs/ndarray/0.12.1/ndarray/trait.AsArray.html
     V: AsArray<'a, F, Ix3>,
-    B: AsArray<'a, F, Ix2>,
     T: AsArray<'a, F, Ix4>,
 {
     // Initialisations
     let im2d_arr: ArrayView3<F> = im2d.into();
     let kernel_weights_arr: ArrayView4<F> = kernel_weights.into();
-    let bias: ArrayView2<F> = bias.into();
     let im_col: Array2<F>; // output of fn: im2col_ref()
+    let bias_array:Array2<F>;
     let new_im_height: usize;
     let new_im_width: usize;
     let weight_shape = kernel_weights_arr.shape();
@@ -229,6 +231,15 @@ where
         // W' =  ((W - WW) / stride ) + 1
         new_im_height = ((im_height - kernel_height) / stride) + 1;
         new_im_width = ((im_width - kernel_width) / stride) + 1;
+    };
+
+    // initialize if bias
+    if bias.is_none(){
+        bias_array = Array::zeros((new_im_height * new_im_height, 1));
+    } 
+    else {
+        // let bias_vec = bias.into_iter().flatten().collect();
+        bias_array = bias.unwrap();
     };
 
     // weights.reshape(F, HH*WW*C)
@@ -277,7 +288,7 @@ where
         );
     };
     let filter_transpose = filter_col.t();
-    let mul = im_col.dot(&filter_transpose) + bias;
+    let mul = im_col.dot(&filter_transpose) + bias_array;
     col2im_ref(&mul, new_im_height, new_im_width, 1)
 }
 
@@ -313,7 +324,7 @@ mod tests {
         );
         let testker = kernel.unwrap();
         let bias = Array::zeros((9, 1));
-        let conv_layer = ConvolutionLayer::new(testker, bias, 1, Padding::Valid);
+        let conv_layer = ConvolutionLayer::new(testker, Some(bias), 1, Padding::Valid);
         let output = arr3(&[[
             [57.0, 75.0, 93.0],
             [111.0, 129.0, 141.0],
@@ -348,8 +359,8 @@ mod tests {
             vec![1., 2., 1., 2., 1., 2., 1., 2., 1., 2., 1., 2.],
         );
         let testker1 = kernel1.unwrap();
-        let bias = Array::zeros((16, 1));
-        let conv_layer1 = ConvolutionLayer::new(testker1, bias, 1, Padding::Same);
+        let bias1 = Array::zeros((16, 1));
+        let conv_layer1 = ConvolutionLayer::new(testker1, Some(bias1), 1, Padding::Same);
         let output1 = arr3(&[[
             [57.0, 75.0, 93.0, 33.0],
             [111.0, 129.0, 141.0, 48.0],
@@ -388,10 +399,8 @@ mod tests {
             [0.04827336, 0.12623257, 0.30822787],
             [0.82976574, 0.8590054, 0.90254945]
         ]];
-        let bias = Array::zeros((1, 1));
-        let bias_1 = Array::zeros((1, 1));
-        let conv_pt = ConvolutionLayer::new(weights_pt, bias, 1, Padding::Valid);
-        let conv_tf = ConvolutionLayer::new_tf(weights_tf, bias_1, 1, Padding::Valid);
+        let conv_pt = ConvolutionLayer::new(weights_pt, None, 1, Padding::Valid);
+        let conv_tf = ConvolutionLayer::new_tf(weights_tf, None, 1, Padding::Valid);
         assert_eq!(conv_pt.convolve(&im), conv_tf.convolve(&im));
     }
 }
