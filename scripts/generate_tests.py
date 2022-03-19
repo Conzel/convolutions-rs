@@ -49,12 +49,11 @@ class RandomArrayTestObject:
         if isinstance(bias, type(None)):
             self.bias = "None"
         else:
-            import pdb;pdb.set_trace()
-            self.bias = numpy_array_to_rust(bias.reshape(-1,1), shape_vec=True)
+            self.bias = numpy_array_to_rust(bias.reshape(-1,1), shape_vec=True, bias=True)
         self.stride = stride
 
 
-def numpy_array_to_rust(x, shape_vec=False):
+def numpy_array_to_rust(x, shape_vec=False, bias=False):
     """
         Outputs a numpy array as a Rust ndarray.
         If shape_vec is set to true, outputs 
@@ -77,7 +76,10 @@ def numpy_array_to_rust(x, shape_vec=False):
     # removes leading array and closing paren tokens
     array_repr = f"{repr(x)}"[6:][:ending_delimiter].replace("\n", "\n\t\t")
     if shape_vec:
-        return f"Array::from_shape_vec({x_shape}, vec!{array_repr}).unwrap()"
+        if bias:
+            return f"Some(Array::from_shape_vec({x_shape}, vec!{array_repr}).unwrap())"
+        else:
+            return f"Array::from_shape_vec({x_shape}, vec!{array_repr}).unwrap()"
     else:
         return f"array!{array_repr}".rstrip().rstrip(",")
 

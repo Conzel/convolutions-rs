@@ -26,8 +26,7 @@ fn test_py_implementation_random_arrays_{{t.test_name}}() {
         let test_input{{loop.index}} = {{ r.input_arr }};
         {# The type hint is needed for the array-makro #}
         let kernel{{loop.index}}: Array4<f32> = {{ r.kernel }};
-        let bias{{loop.index}} = {{r.bias}};
-        let conv_layer{{loop.index}} = {{t.layer_name}}::new(kernel{{loop.index}}, Some(bias{{loop.index}}), {{r.stride}}, {{r.padding}});
+        let conv_layer{{loop.index}} = {{t.layer_name}}::new(kernel{{loop.index}}, {{r.bias}}, {{r.stride}}, {{r.padding}});
         let target_output{{loop.index}}: Array3<f32> = {{ r.output_arr }};
         let current_output{{loop.index}}: Array3<f32> = conv_layer{{loop.index}}.{{t.function_name}}(&test_input{{loop.index}});
 

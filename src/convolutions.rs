@@ -239,8 +239,8 @@ where
     } 
     else {
         // let bias_vec = bias.into_iter().flatten().collect();
-        // bias_single = bias.unwrap();
-        let doubled = bias.unwrap().iter().map(|x| x * 2).collect();
+        bias_vec = bias.unwrap();
+        // let doubled = bias.unwrap().iter().map(|x| x * 2).collect();
     };
 
     // weights.reshape(F, HH*WW*C)

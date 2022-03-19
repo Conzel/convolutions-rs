@@ -49,8 +49,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias1 = Array::from_shape_vec((2, 1), vec![0.70536447, 0.9289133]).unwrap();
-    let conv_layer1 = ConvolutionLayer::new(kernel1, Some(bias1), 2, Padding::Valid);
+    let conv_layer1 = ConvolutionLayer::new(
+        kernel1,
+        Some(Array::from_shape_vec((2, 1), vec![0.70536447, 0.9289133]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output1: Array3<f32> = Array::from_shape_vec(
         (2, 2, 5),
         vec![
@@ -95,8 +99,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias2 = Array::from_shape_vec((2, 1), vec![0.23846498, 0.82509995]).unwrap();
-    let conv_layer2 = ConvolutionLayer::new(kernel2, Some(bias2), 2, Padding::Valid);
+    let conv_layer2 = ConvolutionLayer::new(
+        kernel2,
+        Some(Array::from_shape_vec((2, 1), vec![0.23846498, 0.82509995]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output2: Array3<f32> = Array::from_shape_vec(
         (2, 2, 5),
         vec![
@@ -141,8 +149,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias3 = Array::from_shape_vec((2, 1), vec![0.47547424, 0.44373918]).unwrap();
-    let conv_layer3 = ConvolutionLayer::new(kernel3, Some(bias3), 2, Padding::Valid);
+    let conv_layer3 = ConvolutionLayer::new(
+        kernel3,
+        Some(Array::from_shape_vec((2, 1), vec![0.47547424, 0.44373918]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output3: Array3<f32> = Array::from_shape_vec(
         (2, 2, 5),
         vec![
@@ -191,8 +203,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias4 = Array::from_shape_vec((2, 1), vec![0.9149804, 0.9791666]).unwrap();
-    let conv_layer4 = ConvolutionLayer::new(kernel4, Some(bias4), 2, Padding::Valid);
+    let conv_layer4 = ConvolutionLayer::new(
+        kernel4,
+        Some(Array::from_shape_vec((2, 1), vec![0.9149804, 0.9791666]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output4: Array3<f32> = Array::from_shape_vec(
         (2, 1, 4),
         vec![
@@ -239,8 +255,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias5 = Array::from_shape_vec((2, 1), vec![0.9162307, 0.02157675]).unwrap();
-    let conv_layer5 = ConvolutionLayer::new(kernel5, Some(bias5), 2, Padding::Valid);
+    let conv_layer5 = ConvolutionLayer::new(
+        kernel5,
+        Some(Array::from_shape_vec((2, 1), vec![0.9162307, 0.02157675]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output5: Array3<f32> = Array::from_shape_vec(
         (2, 1, 4),
         vec![
@@ -287,8 +307,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias6 = Array::from_shape_vec((2, 1), vec![0.43856344, 0.7253113]).unwrap();
-    let conv_layer6 = ConvolutionLayer::new(kernel6, Some(bias6), 2, Padding::Valid);
+    let conv_layer6 = ConvolutionLayer::new(
+        kernel6,
+        Some(Array::from_shape_vec((2, 1), vec![0.43856344, 0.7253113]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output6: Array3<f32> = Array::from_shape_vec(
         (2, 1, 4),
         vec![
@@ -344,8 +368,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias7 = Array::from_shape_vec((2, 1), vec![0.32440838, 0.2805719]).unwrap();
-    let conv_layer7 = ConvolutionLayer::new(kernel7, Some(bias7), 2, Padding::Valid);
+    let conv_layer7 = ConvolutionLayer::new(
+        kernel7,
+        Some(Array::from_shape_vec((2, 1), vec![0.32440838, 0.2805719]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output7: Array3<f32> = Array::from_shape_vec(
         (2, 4, 6),
         vec![
@@ -406,8 +434,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias8 = Array::from_shape_vec((2, 1), vec![0.33859608, 0.26381832]).unwrap();
-    let conv_layer8 = ConvolutionLayer::new(kernel8, Some(bias8), 2, Padding::Valid);
+    let conv_layer8 = ConvolutionLayer::new(
+        kernel8,
+        Some(Array::from_shape_vec((2, 1), vec![0.33859608, 0.26381832]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output8: Array3<f32> = Array::from_shape_vec(
         (2, 4, 6),
         vec![
@@ -468,8 +500,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias9 = Array::from_shape_vec((2, 1), vec![0.55938286, 0.9835293]).unwrap();
-    let conv_layer9 = ConvolutionLayer::new(kernel9, Some(bias9), 2, Padding::Valid);
+    let conv_layer9 = ConvolutionLayer::new(
+        kernel9,
+        Some(Array::from_shape_vec((2, 1), vec![0.55938286, 0.9835293]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output9: Array3<f32> = Array::from_shape_vec(
         (2, 4, 6),
         vec![
@@ -534,8 +570,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias10 = Array::from_shape_vec((2, 1), vec![0.36507484, 0.01646563]).unwrap();
-    let conv_layer10 = ConvolutionLayer::new(kernel10, Some(bias10), 2, Padding::Valid);
+    let conv_layer10 = ConvolutionLayer::new(
+        kernel10,
+        Some(Array::from_shape_vec((2, 1), vec![0.36507484, 0.01646563]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output10: Array3<f32> = Array::from_shape_vec(
         (2, 3, 6),
         vec![
@@ -599,8 +639,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias11 = Array::from_shape_vec((2, 1), vec![0.79416144, 0.7215235]).unwrap();
-    let conv_layer11 = ConvolutionLayer::new(kernel11, Some(bias11), 2, Padding::Valid);
+    let conv_layer11 = ConvolutionLayer::new(
+        kernel11,
+        Some(Array::from_shape_vec((2, 1), vec![0.79416144, 0.7215235]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output11: Array3<f32> = Array::from_shape_vec(
         (2, 3, 6),
         vec![
@@ -664,8 +708,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias12 = Array::from_shape_vec((2, 1), vec![0.8421627, 0.27179125]).unwrap();
-    let conv_layer12 = ConvolutionLayer::new(kernel12, Some(bias12), 2, Padding::Valid);
+    let conv_layer12 = ConvolutionLayer::new(
+        kernel12,
+        Some(Array::from_shape_vec((2, 1), vec![0.8421627, 0.27179125]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output12: Array3<f32> = Array::from_shape_vec(
         (2, 3, 6),
         vec![
@@ -725,8 +773,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias13 = Array::from_shape_vec((2, 1), vec![0.80441076, 0.17314304]).unwrap();
-    let conv_layer13 = ConvolutionLayer::new(kernel13, Some(bias13), 2, Padding::Valid);
+    let conv_layer13 = ConvolutionLayer::new(
+        kernel13,
+        Some(Array::from_shape_vec((2, 1), vec![0.80441076, 0.17314304]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output13: Array3<f32> = Array::from_shape_vec(
         (2, 7, 4),
         vec![
@@ -788,8 +840,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias14 = Array::from_shape_vec((2, 1), vec![0.25887516, 0.91578674]).unwrap();
-    let conv_layer14 = ConvolutionLayer::new(kernel14, Some(bias14), 2, Padding::Valid);
+    let conv_layer14 = ConvolutionLayer::new(
+        kernel14,
+        Some(Array::from_shape_vec((2, 1), vec![0.25887516, 0.91578674]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output14: Array3<f32> = Array::from_shape_vec(
         (2, 7, 4),
         vec![
@@ -851,8 +907,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias15 = Array::from_shape_vec((2, 1), vec![0.6485681, 0.22981846]).unwrap();
-    let conv_layer15 = ConvolutionLayer::new(kernel15, Some(bias15), 2, Padding::Valid);
+    let conv_layer15 = ConvolutionLayer::new(
+        kernel15,
+        Some(Array::from_shape_vec((2, 1), vec![0.6485681, 0.22981846]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output15: Array3<f32> = Array::from_shape_vec(
         (2, 7, 4),
         vec![
@@ -918,8 +978,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias16 = Array::from_shape_vec((2, 1), vec![0.7466949, 0.6235891]).unwrap();
-    let conv_layer16 = ConvolutionLayer::new(kernel16, Some(bias16), 2, Padding::Valid);
+    let conv_layer16 = ConvolutionLayer::new(
+        kernel16,
+        Some(Array::from_shape_vec((2, 1), vec![0.7466949, 0.6235891]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output16: Array3<f32> = Array::from_shape_vec(
         (2, 6, 3),
         vec![
@@ -983,8 +1047,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias17 = Array::from_shape_vec((2, 1), vec![0.10633651, 0.95870477]).unwrap();
-    let conv_layer17 = ConvolutionLayer::new(kernel17, Some(bias17), 2, Padding::Valid);
+    let conv_layer17 = ConvolutionLayer::new(
+        kernel17,
+        Some(Array::from_shape_vec((2, 1), vec![0.10633651, 0.95870477]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output17: Array3<f32> = Array::from_shape_vec(
         (2, 6, 3),
         vec![
@@ -1048,8 +1116,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias18 = Array::from_shape_vec((2, 1), vec![0.09309967, 0.8027366]).unwrap();
-    let conv_layer18 = ConvolutionLayer::new(kernel18, Some(bias18), 2, Padding::Valid);
+    let conv_layer18 = ConvolutionLayer::new(
+        kernel18,
+        Some(Array::from_shape_vec((2, 1), vec![0.09309967, 0.8027366]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output18: Array3<f32> = Array::from_shape_vec(
         (2, 6, 3),
         vec![
@@ -1107,8 +1179,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias19 = Array::from_shape_vec((2, 1), vec![0.3282922, 0.2643334]).unwrap();
-    let conv_layer19 = ConvolutionLayer::new(kernel19, Some(bias19), 2, Padding::Valid);
+    let conv_layer19 = ConvolutionLayer::new(
+        kernel19,
+        Some(Array::from_shape_vec((2, 1), vec![0.3282922, 0.2643334]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output19: Array3<f32> = Array::from_shape_vec(
         (2, 2, 2),
         vec![
@@ -1162,8 +1238,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias20 = Array::from_shape_vec((2, 1), vec![0.17503856, 0.7846004]).unwrap();
-    let conv_layer20 = ConvolutionLayer::new(kernel20, Some(bias20), 2, Padding::Valid);
+    let conv_layer20 = ConvolutionLayer::new(
+        kernel20,
+        Some(Array::from_shape_vec((2, 1), vec![0.17503856, 0.7846004]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output20: Array3<f32> = Array::from_shape_vec(
         (2, 2, 2),
         vec![
@@ -1217,8 +1297,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias21 = Array::from_shape_vec((2, 1), vec![0.66896224, 0.46089745]).unwrap();
-    let conv_layer21 = ConvolutionLayer::new(kernel21, Some(bias21), 2, Padding::Valid);
+    let conv_layer21 = ConvolutionLayer::new(
+        kernel21,
+        Some(Array::from_shape_vec((2, 1), vec![0.66896224, 0.46089745]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output21: Array3<f32> = Array::from_shape_vec(
         (2, 2, 2),
         vec![
@@ -1286,8 +1370,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias22 = Array::from_shape_vec((2, 1), vec![0.88391197, 0.8143526]).unwrap();
-    let conv_layer22 = ConvolutionLayer::new(kernel22, Some(bias22), 2, Padding::Valid);
+    let conv_layer22 = ConvolutionLayer::new(
+        kernel22,
+        Some(Array::from_shape_vec((2, 1), vec![0.88391197, 0.8143526]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output22: Array3<f32> =
         Array::from_shape_vec((2, 1, 1), vec![18.996912, 19.043226]).unwrap();
     let current_output22: Array3<f32> = conv_layer22.convolve(&test_input22);
@@ -1350,8 +1438,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias23 = Array::from_shape_vec((2, 1), vec![0.29594678, 0.24183853]).unwrap();
-    let conv_layer23 = ConvolutionLayer::new(kernel23, Some(bias23), 2, Padding::Valid);
+    let conv_layer23 = ConvolutionLayer::new(
+        kernel23,
+        Some(Array::from_shape_vec((2, 1), vec![0.29594678, 0.24183853]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output23: Array3<f32> =
         Array::from_shape_vec((2, 1, 1), vec![17.671507, 18.169834]).unwrap();
     let current_output23: Array3<f32> = conv_layer23.convolve(&test_input23);
@@ -1414,8 +1506,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias24 = Array::from_shape_vec((2, 1), vec![0.38190666, 0.5188661]).unwrap();
-    let conv_layer24 = ConvolutionLayer::new(kernel24, Some(bias24), 2, Padding::Valid);
+    let conv_layer24 = ConvolutionLayer::new(
+        kernel24,
+        Some(Array::from_shape_vec((2, 1), vec![0.38190666, 0.5188661]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output24: Array3<f32> =
         Array::from_shape_vec((2, 1, 1), vec![21.347273, 18.443804]).unwrap();
     let current_output24: Array3<f32> = conv_layer24.convolve(&test_input24);
@@ -1513,8 +1609,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias25 = Array::from_shape_vec((2, 1), vec![0.0504973, 0.86107606]).unwrap();
-    let conv_layer25 = ConvolutionLayer::new(kernel25, Some(bias25), 2, Padding::Valid);
+    let conv_layer25 = ConvolutionLayer::new(
+        kernel25,
+        Some(Array::from_shape_vec((2, 1), vec![0.0504973, 0.86107606]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output25: Array3<f32> = Array::from_shape_vec(
         (2, 4, 7),
         vec![
@@ -1623,8 +1723,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias26 = Array::from_shape_vec((2, 1), vec![0.8218346, 0.61939573]).unwrap();
-    let conv_layer26 = ConvolutionLayer::new(kernel26, Some(bias26), 2, Padding::Valid);
+    let conv_layer26 = ConvolutionLayer::new(
+        kernel26,
+        Some(Array::from_shape_vec((2, 1), vec![0.8218346, 0.61939573]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output26: Array3<f32> = Array::from_shape_vec(
         (2, 4, 7),
         vec![
@@ -1733,8 +1837,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias27 = Array::from_shape_vec((2, 1), vec![0.35906726, 0.558365]).unwrap();
-    let conv_layer27 = ConvolutionLayer::new(kernel27, Some(bias27), 2, Padding::Valid);
+    let conv_layer27 = ConvolutionLayer::new(
+        kernel27,
+        Some(Array::from_shape_vec((2, 1), vec![0.35906726, 0.558365]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output27: Array3<f32> = Array::from_shape_vec(
         (2, 4, 7),
         vec![
@@ -1857,8 +1965,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias28 = Array::from_shape_vec((2, 1), vec![0.4733552, 0.8233244]).unwrap();
-    let conv_layer28 = ConvolutionLayer::new(kernel28, Some(bias28), 2, Padding::Valid);
+    let conv_layer28 = ConvolutionLayer::new(
+        kernel28,
+        Some(Array::from_shape_vec((2, 1), vec![0.4733552, 0.8233244]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output28: Array3<f32> = Array::from_shape_vec(
         (2, 3, 6),
         vec![
@@ -1978,8 +2090,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias29 = Array::from_shape_vec((2, 1), vec![0.94970685, 0.9165496]).unwrap();
-    let conv_layer29 = ConvolutionLayer::new(kernel29, Some(bias29), 2, Padding::Valid);
+    let conv_layer29 = ConvolutionLayer::new(
+        kernel29,
+        Some(Array::from_shape_vec((2, 1), vec![0.94970685, 0.9165496]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output29: Array3<f32> = Array::from_shape_vec(
         (2, 3, 6),
         vec![
@@ -2099,8 +2215,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias30 = Array::from_shape_vec((2, 1), vec![0.51127625, 0.8523459]).unwrap();
-    let conv_layer30 = ConvolutionLayer::new(kernel30, Some(bias30), 2, Padding::Valid);
+    let conv_layer30 = ConvolutionLayer::new(
+        kernel30,
+        Some(Array::from_shape_vec((2, 1), vec![0.51127625, 0.8523459]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output30: Array3<f32> = Array::from_shape_vec(
         (2, 3, 6),
         vec![
@@ -2206,8 +2326,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias31 = Array::from_shape_vec((2, 1), vec![0.5492495, 0.60231775]).unwrap();
-    let conv_layer31 = ConvolutionLayer::new(kernel31, Some(bias31), 2, Padding::Valid);
+    let conv_layer31 = ConvolutionLayer::new(
+        kernel31,
+        Some(Array::from_shape_vec((2, 1), vec![0.5492495, 0.60231775]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output31: Array3<f32> = Array::from_shape_vec(
         (2, 7, 4),
         vec![
@@ -2315,8 +2439,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias32 = Array::from_shape_vec((2, 1), vec![0.602, 0.6732832]).unwrap();
-    let conv_layer32 = ConvolutionLayer::new(kernel32, Some(bias32), 2, Padding::Valid);
+    let conv_layer32 = ConvolutionLayer::new(
+        kernel32,
+        Some(Array::from_shape_vec((2, 1), vec![0.602, 0.6732832]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output32: Array3<f32> = Array::from_shape_vec(
         (2, 7, 4),
         vec![
@@ -2424,8 +2552,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias33 = Array::from_shape_vec((2, 1), vec![0.21047816, 0.16580608]).unwrap();
-    let conv_layer33 = ConvolutionLayer::new(kernel33, Some(bias33), 2, Padding::Valid);
+    let conv_layer33 = ConvolutionLayer::new(
+        kernel33,
+        Some(Array::from_shape_vec((2, 1), vec![0.21047816, 0.16580608]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output33: Array3<f32> = Array::from_shape_vec(
         (2, 7, 4),
         vec![
@@ -2548,8 +2680,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias34 = Array::from_shape_vec((2, 1), vec![0.72710156, 0.67460907]).unwrap();
-    let conv_layer34 = ConvolutionLayer::new(kernel34, Some(bias34), 2, Padding::Valid);
+    let conv_layer34 = ConvolutionLayer::new(
+        kernel34,
+        Some(Array::from_shape_vec((2, 1), vec![0.72710156, 0.67460907]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output34: Array3<f32> = Array::from_shape_vec(
         (2, 6, 3),
         vec![
@@ -2670,8 +2806,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias35 = Array::from_shape_vec((2, 1), vec![0.8822338, 0.59797186]).unwrap();
-    let conv_layer35 = ConvolutionLayer::new(kernel35, Some(bias35), 2, Padding::Valid);
+    let conv_layer35 = ConvolutionLayer::new(
+        kernel35,
+        Some(Array::from_shape_vec((2, 1), vec![0.8822338, 0.59797186]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output35: Array3<f32> = Array::from_shape_vec(
         (2, 6, 3),
         vec![
@@ -2792,8 +2932,12 @@ fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
         ],
     )
     .unwrap();
-    let bias36 = Array::from_shape_vec((2, 1), vec![0.55008173, 0.01467922]).unwrap();
-    let conv_layer36 = ConvolutionLayer::new(kernel36, Some(bias36), 2, Padding::Valid);
+    let conv_layer36 = ConvolutionLayer::new(
+        kernel36,
+        Some(Array::from_shape_vec((2, 1), vec![0.55008173, 0.01467922]).unwrap()),
+        2,
+        Padding::Valid,
+    );
     let target_output36: Array3<f32> = Array::from_shape_vec(
         (2, 6, 3),
         vec![
