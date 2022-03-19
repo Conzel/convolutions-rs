@@ -40,14 +40,14 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
     /// Creates new convolution layer. The weights are given in
     /// Tensorflow layout.
     /// (kernel height, kernel width, in channels, out channels)
-    pub fn new_tf(weights: Array4<F>, bias: Option<Array2<F>>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
+    pub fn new_tf(weights: Array4<F>, bias_array: Option<Array2<F>>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
         let permuted_view = weights.view().permuted_axes([3, 2, 0, 1]);
         // Hack to fix the memory layout, permuted axes makes a
         // col major array / non-contiguous array from weights
         let permuted_array: Array4<F> =
             Array::from_shape_vec(permuted_view.dim(), permuted_view.iter().copied().collect())
                 .unwrap();
-        ConvolutionLayer::new(permuted_array, bias, stride, padding)
+        ConvolutionLayer::new(permuted_array, bias_array, stride, padding)
     }
 
     /// Analog to conv2d.
@@ -197,7 +197,7 @@ where
     let im2d_arr: ArrayView3<F> = im2d.into();
     let kernel_weights_arr: ArrayView4<F> = kernel_weights.into();
     let im_col: Array2<F>; // output of fn: im2col_ref()
-    let bias_array:Array2<F>;
+    let bias_vec:Array2<F>;
     let new_im_height: usize;
     let new_im_width: usize;
     let weight_shape = kernel_weights_arr.shape();
@@ -235,11 +235,12 @@ where
 
     // initialize if bias
     if bias.is_none(){
-        bias_array = Array::zeros((new_im_height * new_im_height, 1));
+        bias_vec = Array::zeros((new_im_height * new_im_width, num_filters));
     } 
     else {
         // let bias_vec = bias.into_iter().flatten().collect();
-        bias_array = bias.unwrap();
+        // bias_single = bias.unwrap();
+        let doubled = bias.unwrap().iter().map(|x| x * 2).collect();
     };
 
     // weights.reshape(F, HH*WW*C)
@@ -288,7 +289,7 @@ where
         );
     };
     let filter_transpose = filter_col.t();
-    let mul = im_col.dot(&filter_transpose) + bias_array;
+    let mul = im_col.dot(&filter_transpose) + bias_vec;
     col2im_ref(&mul, new_im_height, new_im_width, 1)
 }
 
@@ -359,8 +360,8 @@ mod tests {
             vec![1., 2., 1., 2., 1., 2., 1., 2., 1., 2., 1., 2.],
         );
         let testker1 = kernel1.unwrap();
-        let bias1 = Array::zeros((16, 1));
-        let conv_layer1 = ConvolutionLayer::new(testker1, Some(bias1), 1, Padding::Same);
+        // let bias1 = Array::zeros((16, 1));
+        let conv_layer1 = ConvolutionLayer::new(testker1, None, 1, Padding::Same);
         let output1 = arr3(&[[
             [57.0, 75.0, 93.0, 33.0],
             [111.0, 129.0, 141.0, 48.0],

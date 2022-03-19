@@ -26,7 +26,7 @@ class RandomArrayTest:
 
 
 class RandomArrayTestObject:
-    def __init__(self, input_arr, kernel, output_arr, padding, stride=1):
+    def __init__(self, input_arr, kernel, output_arr, bias, padding, stride=1):
         """Struct that represents one test case for the random array tests.
         input_arr: ndarray, 3-Dimensional floating point numpy array
         output_arr: ndarray, 3-Dimensional floating point numpy array
@@ -46,6 +46,11 @@ class RandomArrayTestObject:
         self.input_arr = numpy_array_to_rust(input_arr, shape_vec=True)
         self.output_arr = numpy_array_to_rust(output_arr, shape_vec=True)
         self.kernel = numpy_array_to_rust(kernel, shape_vec=True)
+        if isinstance(bias, type(None)):
+            self.bias = "None"
+        else:
+            import pdb;pdb.set_trace()
+            self.bias = numpy_array_to_rust(bias.reshape(-1,1), shape_vec=True)
         self.stride = stride
 
 
@@ -219,6 +224,8 @@ def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, u
                 else:
                     bias_shape = (ker_shape[1],)
                 bias_vec = np.random.rand(*bias_shape).astype(dtype=np.float32)
+            else:
+                bias_vec = None
 
             # Generating the PT and TF parts
 
@@ -273,7 +280,7 @@ def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, u
             # TODO() write out bias with shape (output_channel, 1)
             # Rust expects Array2<F>
             # Writing the test objects
-            test_obj = RandomArrayTestObject(im, ker, out, padding, stride=stride)
+            test_obj = RandomArrayTestObject(im, ker, out, bias_vec, padding, stride=stride)
             objects.append(test_obj)
 
     if transpose:
@@ -363,46 +370,46 @@ def main():
     write_test_to_file(
         ml_test_folder, conv2d_stride2_torch_test_content, "conv2d_stride2_bias_torch")
 
-    # writing out the conv2d_tranposed test cases
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans, kernel_shapes_trans, transpose=True, padding="VALID", compare_impls=False, use_torch=True, stride=2)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_torch_stride2")
+    # # writing out the conv2d_tranposed test cases
+    # conv2d_transpose_test_case = conv2d_random_array_test(
+    #     img_shapes_trans, kernel_shapes_trans, transpose=True, padding="VALID", compare_impls=False, use_torch=True, stride=2)
+    # conv2d_transpose_test_content = template.render(
+    #     random_tests=[conv2d_transpose_test_case], file=__file__)
+    # write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
+    #                    "conv2d_transpose_torch_stride2")
 
-    # writing out the conv2d_tranposed test cases
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans, kernel_shapes_trans, transpose=True, padding="SAME", compare_impls=False)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose")
+    # # writing out the conv2d_tranposed test cases
+    # conv2d_transpose_test_case = conv2d_random_array_test(
+    #     img_shapes_trans, kernel_shapes_trans, transpose=True, padding="SAME", compare_impls=False)
+    # conv2d_transpose_test_content = template.render(
+    #     random_tests=[conv2d_transpose_test_case], file=__file__)
+    # write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
+    #                    "conv2d_transpose")
 
-    # writing out the conv2d_tranposed test cases
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans, kernel_shapes_trans, transpose=True, padding="VALID", compare_impls=False, use_torch=True)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_torch")
+    # # writing out the conv2d_tranposed test cases
+    # conv2d_transpose_test_case = conv2d_random_array_test(
+    #     img_shapes_trans, kernel_shapes_trans, transpose=True, padding="VALID", compare_impls=False, use_torch=True)
+    # conv2d_transpose_test_content = template.render(
+    #     random_tests=[conv2d_transpose_test_case], file=__file__)
+    # write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
+    #                    "conv2d_transpose_torch")
 
-    # writing out the conv2d_tranposed test cases with bias
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels, transpose=True, padding="VALID", bias=True, compare_impls=False, use_torch=True)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_torch")
+    # # writing out the conv2d_tranposed test cases with bias
+    # conv2d_transpose_test_case = conv2d_random_array_test(
+    #     img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels, transpose=True, padding="VALID", bias=True, compare_impls=False, use_torch=True)
+    # conv2d_transpose_test_content = template.render(
+    #     random_tests=[conv2d_transpose_test_case], file=__file__)
+    # write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
+    #                    "conv2d_transpose_torch")
 
-    # writing out the conv2d_tranposed test cases for 
-    # a change in channel (output != input channel)
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels, transpose=True, padding="SAME", compare_impls=False, stride=2)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_stride2_test_different_in_out_channel")
+    # # writing out the conv2d_tranposed test cases for 
+    # # a change in channel (output != input channel)
+    # conv2d_transpose_test_case = conv2d_random_array_test(
+    #     img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels, transpose=True, padding="SAME", compare_impls=False, stride=2)
+    # conv2d_transpose_test_content = template.render(
+    #     random_tests=[conv2d_transpose_test_case], file=__file__)
+    # write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
+    #                    "conv2d_transpose_stride2_test_different_in_out_channel")
 
 if __name__ == "__main__":
     main()
