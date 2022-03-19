@@ -166,7 +166,7 @@ def transform(orig, dest, x, is_kernel):
     return x
 
 
-def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, use_torch=False, transpose=False, seed=260896, padding="VALID", stride=1, compare_impls=True):
+def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, use_torch=False, transpose=False, seed=260896, padding="VALID", stride=1, bias=None, compare_impls=True):
     """Returns a Test case that can be rendered with the 
     test_py_impl_random_arrays_template.rs into a Rust test
     that tests the conv2d Rust implementation against tf.nn.conv2d.
@@ -209,25 +209,32 @@ def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, u
     for im_shape, ker_shape in list(itertools.product(img_shapes, kernel_shapes)):
         if not transpose and im_shape[0] != ker_shape[1] or transpose and im_shape[0] != ker_shape[0]:
             continue  # shapes are not compatible, channel size mismatch
-
+        
         for i in range(num_arrays_per_case):
             im = np.random.rand(*im_shape).astype(dtype=np.float32)
             ker = np.random.rand(*ker_shape).astype(dtype=np.float32)
+            if not isinstance(bias, type(None)):
+                bias_shape = bias[0] # output channel is the same for all the tests
+                bias_vec = np.random.rand(*bias_shape).astype(dtype=np.float32)
 
             # Generating the PT and TF parts
 
             if compare_impls or use_torch:
                 im_pt = torch.FloatTensor(transform_img("rust", "pt", im))
                 ker_pt = torch.FloatTensor(transform_ker("rust", "pt", ker))
+                if not isinstance(bias, type(None)):
+                    bias_pt = torch.FloatTensor(bias_vec)
+                else:
+                    bias_pt = None
 
                 if transpose:
                     if padding == "SAME": 
                         raise ValueError("Same padding not useable with torch transposed convolution.")
                     out_pt = torch.nn.functional.conv_transpose2d(
-                        im_pt, ker_pt, padding=0, stride=stride);
+                        im_pt, ker_pt, bias_pt, padding=0, stride=stride);
                 else:
                     out_pt = torch.nn.functional.conv2d(
-                        im_pt, ker_pt, padding=padding.lower(), stride=stride)
+                        im_pt, ker_pt, bias_pt, padding=padding.lower(), stride=stride)
 
                 out_pt_numpy = transform_img("pt", "rust", out_pt.numpy())
 
@@ -306,16 +313,20 @@ def main():
     # Im shapes: Channels, Height, Width. Ker shapes are Out, In, Height, Width
     # (the format used in Rust)
 
+    # Note: Tensorflow does not provide an option to input bias; so bias is tested with pytorch
+
     img_shapes = [(1, 5, 12), (1, 10, 15), (1, 15, 10),
                   (3, 6, 6), (3, 10, 15), (3, 15, 10)]
     kernel_shapes = [(2, 1, 3, 4), (2, 1, 5, 5),
                             (2, 3, 3, 3), (2, 3, 5, 5)]
+    bias_shapes = [(2,)]
 
     img_shapes_trans = [(2, 5, 4), (2, 4, 3), (2, 6, 6), (1, 4, 5), (1, 3, 3)]
     kernel_shapes_trans = [(2, 1, 4, 4), (1, 1, 4, 4), (2, 1, 3, 3)]
     # tests for different output channels
     img_shapes_trans_test_different_channels = [(1,3,3), (3,2,2)]
     kernel_shapes_trans_test_different_channels = [(1,2,3,3), (1,2,5,5), (3,2,4,4), (3,2, 6,6)]
+    bias_shapes_trans_test_different_channels = [(1,), (3,)]
 
     np.set_printoptions(suppress=True)
     # loading Jinja with the random array test template
@@ -341,20 +352,13 @@ def main():
     write_test_to_file(
         ml_test_folder, conv2d_torch_test_content, "conv2d_torch")
 
-    # writing out the conv2d_stride2 test cases with stride 2
-    conv2d_stride2_test_case = conv2d_random_array_test(
-        img_shapes, kernel_shapes, stride=2, padding="SAME", compare_impls=False)
-    conv2d_stride2_test_content = template.render(
-        random_tests=[conv2d_stride2_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_stride2_test_content, "conv2d_stride2")
-
-    # writing out the conv2d test cases with torch and stride 2
+    # writing out the conv2d test cases with torch and stride 2 and bias
     conv2d_stride2_torch_test_case = conv2d_random_array_test(
-        img_shapes, kernel_shapes, use_torch=True, stride=2, padding="VALID")
+        img_shapes, kernel_shapes, use_torch=True, stride=2, padding="VALID", bias=bias_shapes)
     conv2d_stride2_torch_test_content = template.render(
         random_tests=[conv2d_stride2_torch_test_case], file=__file__)
     write_test_to_file(
-        ml_test_folder, conv2d_stride2_torch_test_content, "conv2d_stride2_torch")
+        ml_test_folder, conv2d_stride2_torch_test_content, "conv2d_stride2_bias_torch")
 
     # writing out the conv2d_tranposed test cases
     conv2d_transpose_test_case = conv2d_random_array_test(
@@ -380,6 +384,14 @@ def main():
     write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
                        "conv2d_transpose_torch")
 
+    # writing out the conv2d_tranposed test cases with bias
+    conv2d_transpose_test_case = conv2d_random_array_test(
+        img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels, transpose=True, padding="VALID", bias=bias_shapes_trans_test_different_channels, compare_impls=False, use_torch=True)
+    conv2d_transpose_test_content = template.render(
+        random_tests=[conv2d_transpose_test_case], file=__file__)
+    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
+                       "conv2d_transpose_torch")
+
     # writing out the conv2d_tranposed test cases for 
     # a change in channel (output != input channel)
     conv2d_transpose_test_case = conv2d_random_array_test(
@@ -388,7 +400,6 @@ def main():
         random_tests=[conv2d_transpose_test_case], file=__file__)
     write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
                        "conv2d_transpose_stride2_test_different_in_out_channel")
-
 
 if __name__ == "__main__":
     main()
