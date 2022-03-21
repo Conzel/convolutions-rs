@@ -358,7 +358,7 @@ def main():
     conv2d_stride2_test_content = template.render(
         random_tests=[conv2d_stride2_test_case], file=__file__)
     write_test_to_file(
-        ml_test_folder, conv2d_stride2_test_content, "conv2d_stride2")
+        ml_test_folder, conv2d_stride2_test_content, "conv2d_stride2_torch_same")
 
     # writing out the conv2d test cases with torch and stride 2
     conv2d_stride2_torch_test_case = conv2d_random_array_test(
@@ -366,7 +366,7 @@ def main():
     conv2d_stride2_torch_test_content = template.render(
         random_tests=[conv2d_stride2_torch_test_case], file=__file__)
     write_test_to_file(
-        ml_test_folder, conv2d_stride2_torch_test_content, "conv2d_stride2_torch")
+        ml_test_folder, conv2d_stride2_torch_test_content, "conv2d_stride2_torch_valid")
 
     # writing out the conv2d_tranposed test cases
     conv2d_transpose_test_case = conv2d_random_array_test(
