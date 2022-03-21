@@ -6,11 +6,22 @@ This crate has been developed in the course of the ZipNet project (https://githu
 ## Features 
 - [x] Minimal dependencies, especially no C-dependencies
 - [x] Extensively tested through randomly generated unit tests
-- [x] 100% compatible with Tensorflow and Pytorch implementations
+- [x] 100% compatible with Pytorch implementation
 - [x] Generics to ensure smooth usage
 - [x] Speed verified by benchmarking
 
 As of now, this crate is as fast as Pytorch on small images, but has a noticeable slowdown on large and medium images (takes ~20-50x as much time). We are still reaonsably fast enough for research/sample applications, but we aim to improve the speed to get close to PyTorch. Benchmarks can be found at https://github.com/Conzel/convolutions-rs-benchmarks/.
+
+Additionally, Transposed Convolution is currently relatively slow. We are working
+to alleviate the issue.
+
+## Compatibility with implementations
+As mentioned in the bullet points above, we are 100% compatible with the Pytorch implementation. This doesn't mean that we support all operations that Pytorch has, but all those which we support give the same output as in Pytorch. This is verified
+by random array tests. 
+
+The implementations of Pytorch and Tensorflow mostly agree. The only case we found where they sometimes don't agree is `same` padding, as there might be different strategies to do this. This is not a problem for strides of size 1, but it results in different array values for strides > 1. 
+
+See here for further discussion: https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
 
 ## Usage
 As mentioned, this package provides normal convolutions as well as transposed convolutions. We provide both in the form of free functions as well as something resembling a neural network layer. This crate also requires ndarray to use the functions, as input and output are in the form of ndarrays.
