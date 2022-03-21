@@ -89,7 +89,6 @@ where
     // Initialisations
     let im2d_arr: ArrayView3<F> = im2d.into();
     let kernel_weights_arr: ArrayView4<F> = kernel_weights.into();
-    let output: Array3<F>;
     let im2d_stride: Array3<F>;
     let new_im_height: usize;
     let new_im_width: usize;
@@ -196,7 +195,6 @@ where
     // NOTE: The kernel strides across the image at 1 regardless of the stride we provide
 
     let filter_transpose = filter_col_flatten.t();
-    println!("{:?}, {:?}", im_col.shape(), filter_transpose.shape());
     let mul = im_col.dot(&filter_transpose); // + bias_m
 
     if padding == Padding::Same {
@@ -212,20 +210,18 @@ where
             stride,
             kernel_height,
             kernel_width,
-            true,
         );
 
         let pad_right_int = new_im_width - pad_right;
         let pad_bottom_int = new_im_height - pad_bottom;
-        output = mul_reshape
+        mul_reshape
             .slice(s![.., pad_top..pad_bottom_int, pad_left..pad_right_int])
-            .into_owned();
+            .into_owned()
     } else {
         let mul_transpose = mul.t();
-        output = mul_transpose
+        mul_transpose
             .into_shape((num_filters, new_im_height, new_im_width))
             .unwrap()
-            .into_owned();
-    };
-    output
+            .into_owned()
+    }
 }

@@ -56,7 +56,6 @@ pub(in crate) fn get_padding_size(
     stride: usize,
     kernel_h: usize,
     kernel_w: usize,
-    transpose: bool,
 ) -> (usize, usize, usize, usize, usize, usize) {
     let pad_along_height: usize;
     let pad_along_width: usize;
@@ -78,25 +77,16 @@ pub(in crate) fn get_padding_size(
     let pad_left = pad_along_width / 2;
     let pad_right = pad_along_width - pad_left;
 
-    if transpose {
-        (
-            pad_along_height,
-            pad_along_width,
-            pad_top,
-            pad_bottom,
-            pad_left,
-            pad_right,
-        )
-    } else {
-        (
-            pad_along_height,
-            pad_along_width,
-            pad_bottom,
-            pad_top,
-            pad_right,
-            pad_left,
-        )
-    }
+    // yes top/bottom and right/left are swapped. No, I don't know
+    // why this change makes it conform to the pytorchn implementation.
+    (
+        pad_along_height,
+        pad_along_width,
+        pad_bottom,
+        pad_top,
+        pad_right,
+        pad_left,
+    )
 }
 
 pub(in crate) fn im2col_ref<'a, T, F: 'a + Float>(
@@ -245,14 +235,8 @@ where
     // fn:im2col() for different Paddings
     if padding == Padding::Same {
         // https://mmuratarat.github.io/2019-01-17/implementing-padding-schemes-of-tensorflow-in-python
-        let (pad_num_h, pad_num_w, pad_top, pad_bottom, pad_left, pad_right) = get_padding_size(
-            im_height,
-            im_width,
-            stride,
-            kernel_height,
-            kernel_width,
-            false,
-        );
+        let (pad_num_h, pad_num_w, pad_top, pad_bottom, pad_left, pad_right) =
+            get_padding_size(im_height, im_width, stride, kernel_height, kernel_width);
         let mut im2d_arr_pad: Array3<F> = Array::zeros((
             num_channels_out,
             im_height + pad_num_h,
@@ -289,7 +273,6 @@ where
         );
     };
     let filter_transpose = filter_col.t();
-    println!("{:?}, {:?}", im_col.shape(), filter_transpose.shape());
     let mul = im_col.dot(&filter_transpose); // + bias_m
     col2im_ref(&mul, new_im_height, new_im_width, 1)
 }
