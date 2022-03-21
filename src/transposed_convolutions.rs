@@ -196,6 +196,7 @@ where
     // NOTE: The kernel strides across the image at 1 regardless of the stride we provide
 
     let filter_transpose = filter_col_flatten.t();
+    println!("{:?}, {:?}", im_col.shape(), filter_transpose.shape());
     let mul = im_col.dot(&filter_transpose); // + bias_m
 
     if padding == Padding::Same {
@@ -211,6 +212,7 @@ where
             stride,
             kernel_height,
             kernel_width,
+            true,
         );
 
         let pad_right_int = new_im_width - pad_right;

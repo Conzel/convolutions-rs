@@ -56,6 +56,7 @@ pub(in crate) fn get_padding_size(
     stride: usize,
     kernel_h: usize,
     kernel_w: usize,
+    transpose: bool,
 ) -> (usize, usize, usize, usize, usize, usize) {
     let pad_along_height: usize;
     let pad_along_width: usize;
@@ -77,14 +78,25 @@ pub(in crate) fn get_padding_size(
     let pad_left = pad_along_width / 2;
     let pad_right = pad_along_width - pad_left;
 
-    (
-        pad_along_height,
-        pad_along_width,
-        pad_top,
-        pad_bottom,
-        pad_left,
-        pad_right,
-    )
+    if transpose {
+        (
+            pad_along_height,
+            pad_along_width,
+            pad_top,
+            pad_bottom,
+            pad_left,
+            pad_right,
+        )
+    } else {
+        (
+            pad_along_height,
+            pad_along_width,
+            pad_bottom,
+            pad_top,
+            pad_right,
+            pad_left,
+        )
+    }
 }
 
 pub(in crate) fn im2col_ref<'a, T, F: 'a + Float>(
@@ -233,8 +245,14 @@ where
     // fn:im2col() for different Paddings
     if padding == Padding::Same {
         // https://mmuratarat.github.io/2019-01-17/implementing-padding-schemes-of-tensorflow-in-python
-        let (pad_num_h, pad_num_w, pad_top, pad_bottom, pad_left, pad_right) =
-            get_padding_size(im_height, im_width, stride, kernel_height, kernel_width);
+        let (pad_num_h, pad_num_w, pad_top, pad_bottom, pad_left, pad_right) = get_padding_size(
+            im_height,
+            im_width,
+            stride,
+            kernel_height,
+            kernel_width,
+            false,
+        );
         let mut im2d_arr_pad: Array3<F> = Array::zeros((
             num_channels_out,
             im_height + pad_num_h,
@@ -271,118 +289,7 @@ where
         );
     };
     let filter_transpose = filter_col.t();
+    println!("{:?}, {:?}", im_col.shape(), filter_transpose.shape());
     let mul = im_col.dot(&filter_transpose); // + bias_m
     col2im_ref(&mul, new_im_height, new_im_width, 1)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_2d_conv() {
-        let test_img = array![
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ]
-        ];
-        let kernel = Array::from_shape_vec(
-            (1, 3, 2, 2),
-            vec![1., 2., 1., 2., 1., 2., 1., 2., 1., 2., 1., 2.],
-        );
-        let testker = kernel.unwrap();
-        let conv_layer = ConvolutionLayer::new(testker, 1, Padding::Valid);
-        let output = arr3(&[[
-            [57.0, 75.0, 93.0],
-            [111.0, 129.0, 141.0],
-            [138.0, 156.0, 162.0],
-        ]]);
-        let convolved_image = conv_layer.convolve(&test_img);
-
-        assert_eq!(convolved_image, output);
-
-        let test_img1 = array![
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ]
-        ];
-        let kernel1 = Array::from_shape_vec(
-            (1, 3, 2, 2),
-            vec![1., 2., 1., 2., 1., 2., 1., 2., 1., 2., 1., 2.],
-        );
-        let testker1 = kernel1.unwrap();
-        let conv_layer1 = ConvolutionLayer::new(testker1, 1, Padding::Same);
-        let output1 = arr3(&[[
-            [57.0, 75.0, 93.0, 33.0],
-            [111.0, 129.0, 141.0, 48.0],
-            [138.0, 156.0, 162.0, 54.0],
-            [69.0, 78.0, 81.0, 27.0],
-        ]]);
-        let convolved_image1 = conv_layer1.convolve(&test_img1);
-
-        assert_eq!(convolved_image1, output1);
-    }
-
-    #[test]
-    fn test_conv2d_tf_layout() {
-        let weights_pt = Array::from_shape_vec(
-            (2, 1, 3, 3),
-            vec![
-                0.06664403, 0.65961174, 0.49895822, 0.80375346, 0.20159994, 0.25319365, 0.0520944,
-                0.33067411, 0.76843672, 0.08252145, 0.22638044, 0.09291164, 0.63277792, 0.50181511,
-                0.40393298, 0.19495441, 0.30511827, 0.28940649,
-            ],
-        )
-        .unwrap();
-
-        let weights_tf = Array::from_shape_vec(
-            (3, 3, 1, 2),
-            vec![
-                0.06664403, 0.08252145, 0.65961174, 0.22638044, 0.49895822, 0.09291164, 0.80375346,
-                0.63277792, 0.20159994, 0.50181511, 0.25319365, 0.40393298, 0.0520944, 0.19495441,
-                0.33067411, 0.30511827, 0.76843672, 0.28940649,
-            ],
-        )
-        .unwrap();
-
-        let im = array![[
-            [0.56494069, 0.3395626, 0.71270928],
-            [0.04827336, 0.12623257, 0.30822787],
-            [0.82976574, 0.8590054, 0.90254945]
-        ]];
-
-        let conv_pt = ConvolutionLayer::new(weights_pt, 1, Padding::Valid);
-        let conv_tf = ConvolutionLayer::new_tf(weights_tf, 1, Padding::Valid);
-        assert_eq!(conv_pt.convolve(&im), conv_tf.convolve(&im));
-    }
 }
