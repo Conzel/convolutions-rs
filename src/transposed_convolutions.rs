@@ -201,13 +201,14 @@ where
     let filter_transpose = filter_col_flatten.t();
     let mul = im_col.dot(&filter_transpose); // + bias_m
 
+    let mut mul_reshape = mul
+        .into_shape((new_im_height, new_im_width, num_filters))
+        .unwrap()
+        .into_owned();
+    mul_reshape.swap_axes(0, 2);
+    mul_reshape.swap_axes(1, 2);
+
     let output = if padding == Padding::Same {
-        let mut mul_reshape = mul
-            .into_shape((new_im_height, new_im_width, num_filters))
-            .unwrap()
-            .into_owned();
-        mul_reshape.swap_axes(0, 2);
-        mul_reshape.swap_axes(1, 2);
         let (_, _, pad_top, pad_bottom, pad_left, pad_right) = get_padding_size(
             im_height * stride,
             im_width * stride,
@@ -222,11 +223,7 @@ where
             .slice(s![.., pad_top..pad_bottom_int, pad_left..pad_right_int])
             .into_owned()
     } else {
-        let mul_transpose = mul.t();
-        mul_transpose
-            .into_shape((num_filters, new_im_height, new_im_width))
-            .unwrap()
-            .into_owned()
+        mul_reshape.into_owned()
     };
     add_bias(&output, bias)
 }
