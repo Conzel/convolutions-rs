@@ -22,7 +22,7 @@ fn arr_allclose<D: Dimension>(current: &Array<f32, D>, target: &Array<f32, D>) -
 }
 
 #[test]
-fn test_py_implementation_random_arrays_conv2d_torch_stride2() {
+fn test_py_implementation_random_arrays_conv2d_stride2_same() {
     let test_input1 = Array::from_shape_vec(
         (1, 5, 12),
         vec![
