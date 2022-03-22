@@ -5,7 +5,6 @@ import itertools
 import tensorflow as tf
 import os
 import torch
-from torch._C import Value
 
 
 class RandomArrayTest:
@@ -57,9 +56,9 @@ class RandomArrayTestObject:
 def numpy_array_to_rust(x, shape_vec=False, bias=False):
     """
         Outputs a numpy array as a Rust ndarray.
-        If shape_vec is set to true, outputs 
+        If shape_vec is set to true, outputs
         the array creationg through the shape_vec Rust function.
-        The Rust array macro seems broken for 4-D arrays, so this is a 
+        The Rust array macro seems broken for 4-D arrays, so this is a
         workaround.
     """
     # This removes the "dtype=..." info in the representation,
@@ -137,7 +136,7 @@ def transform(orig, dest, x, is_kernel):
     orig: str, tf, rust, or pt
     dest: str, tf, rust, or pt
     x: ndarray to transform
-    transpose: whether 
+    transpose: whether
     kernel: bool, True if x is a kernel
     """
     orig = orig.lower()
@@ -175,7 +174,7 @@ def transform(orig, dest, x, is_kernel):
 
 
 def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, use_torch=False, transpose=False, seed=260896, padding="VALID", stride=1, bias=False, compare_impls=True):
-    """Returns a Test case that can be rendered with the 
+    """Returns a Test case that can be rendered with the
     test_py_impl_random_arrays_template.rs into a Rust test
     that tests the conv2d Rust implementation against tf.nn.conv2d.
 
@@ -203,14 +202,11 @@ def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, u
 
     np.random.seed(seed)
 
-    if transpose and padding == "SAME" and (compare_impls or use_torch):
-        raise ValueError(
-            "Same padding not useable with torch transposed convolution.")
     if transpose and padding == "VALID" and (compare_impls or not use_torch):
         raise ValueError(
             "Valid padding not useable with tensorflow transposed convolution.")
-    if stride != 1 and (compare_impls or use_torch) and padding.lower() == "same":
-        raise ValueError("Pytorch cannot handle stride != 1 with same padding")
+    if stride > 1 and padding.lower() == "same" and (compare_impls or not use_torch):
+        raise ValueError("Stride > 1 with same padding: It is known, that Pytorch and Tensorflow have differing implementations. See https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch. We abide by the Pytorch implementation. Aborting test generation.")
 
     objects = []
     for im_shape, ker_shape in list(itertools.product(img_shapes, kernel_shapes)):
@@ -241,13 +237,19 @@ def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, u
 
                 if transpose:
                     if padding == "SAME":
-                        raise ValueError(
-                            "Same padding not useable with torch transposed convolution.")
-                    out_pt = torch.nn.functional.conv_transpose2d(
-                        im_pt, ker_pt, bias_pt, padding=0, stride=stride)
+                        # This simulates padding = "SAME"
+                        out_pt = torch.nn.functional.conv_transpose2d(
+                            im_pt, ker_pt, bias_pt, output_padding=stride-1, padding=(ker_pt.shape[2] // 2, ker_pt.shape[3]//2), stride=stride)
+                    else:
+                        out_pt = torch.nn.functional.conv_transpose2d(
+                            im_pt, ker_pt, bias_pt, padding=0, stride=stride)
                 else:
-                    out_pt = torch.nn.functional.conv2d(
-                        im_pt, ker_pt, bias_pt, padding=padding.lower(), stride=stride)
+                    if padding == "SAME" and stride > 1:
+                        out_pt = torch.nn.functional.conv2d(
+                            im_pt, ker_pt, bias_pt, padding=(ker_pt.shape[2] // 2, ker_pt.shape[3]//2), stride=stride)
+                    else:
+                        out_pt = torch.nn.functional.conv2d(
+                            im_pt, ker_pt, bias_pt, padding=padding.lower(), stride=stride)
 
                 out_pt_numpy = transform_img("pt", "rust", out_pt.numpy())
 
@@ -272,7 +274,6 @@ def conv2d_random_array_test(img_shapes, kernel_shapes, num_arrays_per_case=3, u
 
             # Comparing implementations
             if compare_impls:
-                # to make sure tf and pt implementations agree
                 assert np.allclose(
                     out_tf_numpy, out_pt_numpy), f"Torch and Tensorflow implementations didn't match.\nTorch: {out_pt_numpy}\n Tensorflow:{out_tf_numpy}"
 
@@ -338,11 +339,12 @@ def main():
                      (2, 3, 3, 3), (2, 3, 5, 5)]
 
     img_shapes_trans = [(2, 5, 4), (2, 4, 3), (2, 6, 6), (1, 4, 5), (1, 3, 3)]
-    kernel_shapes_trans = [(2, 1, 4, 4), (1, 1, 4, 4), (2, 1, 3, 3)]
+    kernel_shapes_trans = [(2, 1, 4, 4), (1, 1, 4, 4),
+                           (2, 1, 3, 3), (2, 1, 5, 5)]
     # tests for different output channels
     img_shapes_trans_test_different_channels = [(1, 3, 3), (3, 2, 2)]
     kernel_shapes_trans_test_different_channels = [
-        (1, 2, 3, 3), (1, 2, 5, 5), (3, 2, 4, 4), (3, 2, 6, 6)]
+        (3, 2, 4, 4), (3, 2, 6, 6), (1, 2, 3, 3), (1, 2, 5, 5)]
 
     np.set_printoptions(suppress=True)
     # loading Jinja with the random array test template
@@ -353,69 +355,70 @@ def main():
     template = env.get_template("test_py_impl_random_arrays_template.rs")
     ml_test_folder = os.path.join(project_root, "tests")
 
-    # writing out the conv2d test cases
+    # stride = 1, padding= "VALID", normal conv
     conv2d_test_case = conv2d_random_array_test(
-        img_shapes, kernel_shapes)
+        img_shapes, kernel_shapes, padding="VALID", compare_impls=True)
     conv2d_test_content = template.render(
         random_tests=[conv2d_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_test_content, "conv2d")
+    write_test_to_file(ml_test_folder, conv2d_test_content,
+                       "conv2d_stride1_valid_both")
 
-    # writing out the conv2d test cases with torch
-    conv2d_torch_test_case = conv2d_random_array_test(
-        img_shapes, kernel_shapes, use_torch=True)
-    conv2d_torch_test_content = template.render(
-        random_tests=[conv2d_torch_test_case], file=__file__)
+    # writing out the conv2d_stride2 test cases with stride 2
+    # we need to skip the uneven kernel, as same padding in torch
+    # only really works with uneven kernels (else we would need
+    # a full pad operation)
+    # We cannot compare the impls, as PT and TF disagree here. By convention,
+    # we will stick to the PT implementation.
+    # See: https://stackoverflow.com/questions/52975843/comparing-conv2d-with-padding-between-tensorflow-and-pytorch
+    conv2d_stride2_test_case = conv2d_random_array_test(
+        img_shapes, kernel_shapes[1:], stride=2, padding="SAME", compare_impls=False, use_torch=True)
+    conv2d_stride2_test_content = template.render(
+        random_tests=[conv2d_stride2_test_case], file=__file__)
     write_test_to_file(
-        ml_test_folder, conv2d_torch_test_content, "conv2d_torch")
+        ml_test_folder, conv2d_stride2_test_content, "conv2d_stride2_same_torch")
 
-    # writing out the conv2d test cases with torch and stride 2 and bias
-    conv2d_stride2_torch_test_case = conv2d_random_array_test(
-        img_shapes, kernel_shapes, use_torch=True, stride=2, padding="VALID", bias=True, compare_impls=False)
-    conv2d_stride2_torch_test_content = template.render(
-        random_tests=[conv2d_stride2_torch_test_case], file=__file__)
-    write_test_to_file(
-        ml_test_folder, conv2d_stride2_torch_test_content, "conv2d_stride2_bias_torch")
-
-    # writing out the conv2d_tranposed test cases
+    # stride 2, padding = "VALID", conv2 transpose, no bias
     conv2d_transpose_test_case = conv2d_random_array_test(
         img_shapes_trans, kernel_shapes_trans, transpose=True, padding="VALID", compare_impls=False, use_torch=True, stride=2)
     conv2d_transpose_test_content = template.render(
         random_tests=[conv2d_transpose_test_case], file=__file__)
     write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_torch_stride2")
+                       "conv2d_transpose_stride2_valid_torch")
 
-    # writing out the conv2d_tranposed test cases
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans, kernel_shapes_trans, transpose=True, padding="SAME", compare_impls=False)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose")
-
-    # writing out the conv2d_tranposed test cases with bias
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans, kernel_shapes_trans, transpose=True, padding="VALID", compare_impls=False, use_torch=True)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_torch_bias")
-
-    # writing out the conv2d_tranposed test cases with bias
-    conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels, transpose=True, padding="VALID", bias=True, compare_impls=False, use_torch=True)
-    conv2d_transpose_test_content = template.render(
-        random_tests=[conv2d_transpose_test_case], file=__file__)
-    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
-                       "conv2d_transpose_torch")
+    # transpose, padding same, stride2. Uses torch, as impls cant be compared
+    # only uneven kernel sizes usable
+    # stride 2, padding = "SAME", conv2 transpose, no bias
+    conv2d_stride2_same_transpose_test_case = conv2d_random_array_test(
+        img_shapes_trans, kernel_shapes_trans[2:], transpose=True, padding="SAME", compare_impls=False, use_torch=True, stride=2)
+    conv2d_stride2_transpose_test_content = template.render(
+        random_tests=[conv2d_stride2_same_transpose_test_case], file=__file__)
+    write_test_to_file(ml_test_folder, conv2d_stride2_transpose_test_content,
+                       "conv2d_transpose_stride2_same_torch")
 
     # writing out the conv2d_tranposed test cases for
     # a change in channel (output != input channel)
     conv2d_transpose_test_case = conv2d_random_array_test(
-        img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels, transpose=True, padding="SAME", compare_impls=False, stride=2)
+        img_shapes_trans_test_different_channels, kernel_shapes_trans_test_different_channels[2:], transpose=True, padding="SAME", compare_impls=False, stride=2, use_torch=True)
     conv2d_transpose_test_content = template.render(
         random_tests=[conv2d_transpose_test_case], file=__file__)
     write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
                        "conv2d_transpose_stride2_test_different_in_out_channel")
+
+    # transpose, padding valid, stride1
+    conv2d_transpose_test_case = conv2d_random_array_test(
+        img_shapes_trans, kernel_shapes_trans, transpose=True, padding="VALID", compare_impls=False, use_torch=True, bias=True)
+    conv2d_transpose_test_content = template.render(
+        random_tests=[conv2d_transpose_test_case], file=__file__)
+    write_test_to_file(ml_test_folder, conv2d_transpose_test_content,
+                       "conv2d_transpose_stride1_valid_torch_bias")
+
+    # stride 1, padding = "VALID", normal conv, bias
+    conv2d_stride2_torch_test_case = conv2d_random_array_test(
+        img_shapes, kernel_shapes, use_torch=True, stride=1, padding="VALID", bias=True, compare_impls=False)
+    conv2d_stride2_torch_test_content = template.render(
+        random_tests=[conv2d_stride2_torch_test_case], file=__file__)
+    write_test_to_file(
+        ml_test_folder, conv2d_stride2_torch_test_content, "conv2d_stride2_valid_torch_bias")
 
 
 if __name__ == "__main__":

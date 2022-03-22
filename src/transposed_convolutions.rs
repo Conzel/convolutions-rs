@@ -93,7 +93,6 @@ where
     // Initialisations
     let im2d_arr: ArrayView3<F> = im2d.into();
     let kernel_weights_arr: ArrayView4<F> = kernel_weights.into();
-    let output: Array3<F>;
     let im2d_stride: Array3<F>;
     let new_im_height: usize;
     let new_im_width: usize;
@@ -202,7 +201,7 @@ where
     let filter_transpose = filter_col_flatten.t();
     let mul = im_col.dot(&filter_transpose); // + bias_m
 
-    if padding == Padding::Same {
+    let output = if padding == Padding::Same {
         let mut mul_reshape = mul
             .into_shape((new_im_height, new_im_width, num_filters))
             .unwrap()
@@ -219,15 +218,15 @@ where
 
         let pad_right_int = new_im_width - pad_right;
         let pad_bottom_int = new_im_height - pad_bottom;
-        output = mul_reshape
+        mul_reshape
             .slice(s![.., pad_top..pad_bottom_int, pad_left..pad_right_int])
-            .into_owned();
+            .into_owned()
     } else {
         let mul_transpose = mul.t();
-        output = mul_transpose
+        mul_transpose
             .into_shape((num_filters, new_im_height, new_im_width))
             .unwrap()
-            .into_owned();
+            .into_owned()
     };
     add_bias(&output, bias)
 }
