@@ -30,10 +30,6 @@ impl<F: 'static + Float + std::ops::AddAssign> ConvolutionLayer<F> {
         padding: Padding,
     ) -> ConvolutionLayer<F> {
         assert!(stride > 0, "Stride of 0 passed");
-        // match bias_array{
-        //     Some(x) => x,
-        //     None => None,
-        // }
         ConvolutionLayer {
             kernel: weights,
             bias: bias_array,
