@@ -5,7 +5,7 @@
 //! - <https://github.com/akutzer/numpy_cnn/blob/master/CNN/Layer/TransposedConv.py>
 //! - <https://ieee.nitk.ac.in/blog/deconv/>
 use crate::{
-    convolutions::{get_padding_size, im2col_ref, ConvolutionLayer},
+    convolutions::{add_bias, get_padding_size, im2col_ref, ConvolutionLayer},
     ConvKernel, DataRepresentation, Padding,
 };
 use ndarray::*;
@@ -16,13 +16,13 @@ pub struct TransposedConvolutionLayer<F: Float> {
     convolution_layer: ConvolutionLayer<F>,
 }
 
-impl<F: 'static + Float> TransposedConvolutionLayer<F> {
+impl<F: 'static + Float + std::ops::AddAssign> TransposedConvolutionLayer<F> {
     /// Creates new transposed_convolutionLayer. The weights are given in
     /// Pytorch layout.
     /// (in channels, out channels, kernel_height, kernel_width)
     pub fn new(
         weights: ConvKernel<F>,
-        bias: Option<Array2<F>>,
+        bias: Option<Array1<F>>,
         stride: usize,
         padding: Padding,
     ) -> TransposedConvolutionLayer<F> {
@@ -36,7 +36,7 @@ impl<F: 'static + Float> TransposedConvolutionLayer<F> {
     /// (kernel height, kernel width, out channels, in channels)
     pub fn new_tf(
         weights: ConvKernel<F>,
-        bias: Option<Array2<F>>,
+        bias: Option<Array1<F>>,
         stride: usize,
         padding: Padding,
     ) -> TransposedConvolutionLayer<F> {
@@ -49,6 +49,7 @@ impl<F: 'static + Float> TransposedConvolutionLayer<F> {
     pub fn transposed_convolve(&self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
         let output = conv_transpose2d(
             &self.convolution_layer.kernel,
+            self.convolution_layer.bias.as_ref(),
             &image.view(),
             self.convolution_layer.padding,
             self.convolution_layer.stride,
@@ -75,8 +76,9 @@ impl<F: 'static + Float> TransposedConvolutionLayer<F> {
 /// Returns:
 /// -----------------------------------------------
 /// - out: Output data, of shape (F, H', W')
-pub fn conv_transpose2d<'a, T, V, F: 'static + Float>(
+pub fn conv_transpose2d<'a, T, V, F: 'static + Float + std::ops::AddAssign>(
     kernel_weights: T,
+    bias: Option<&Array1<F>>,
     im2d: V,
     padding: Padding,
     stride: usize,
@@ -227,5 +229,5 @@ where
             .unwrap()
             .into_owned();
     };
-    output
+    add_bias(&output, bias)
 }

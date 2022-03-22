@@ -13,17 +13,22 @@ use num_traits::Float;
 pub struct ConvolutionLayer<F: Float> {
     /// Weight matrix of the kernel
     pub(in crate) kernel: Array4<F>,
-    pub(in crate) bias: Option<Array2<F>>,
+    pub(in crate) bias: Option<Array1<F>>,
     pub(in crate) stride: usize,
     pub(in crate) padding: Padding,
 }
 
-impl<F: 'static + Float> ConvolutionLayer<F> {
-    /// Creates new convolution layer. 
+impl<F: 'static + Float + std::ops::AddAssign> ConvolutionLayer<F> {
+    /// Creates new convolution layer.
     /// The weights are given in Pytorch layout.
     /// (out channels, in channels, kernel height, kernel width)
     /// Bias: (output height * output width, 1)
-    pub fn new(weights: Array4<F>, bias_array: Option<Array2<F>>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
+    pub fn new(
+        weights: Array4<F>,
+        bias_array: Option<Array1<F>>,
+        stride: usize,
+        padding: Padding,
+    ) -> ConvolutionLayer<F> {
         assert!(stride > 0, "Stride of 0 passed");
         // match bias_array{
         //     Some(x) => x,
@@ -31,7 +36,7 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
         // }
         ConvolutionLayer {
             kernel: weights,
-            bias:bias_array,
+            bias: bias_array,
             stride,
             padding,
         }
@@ -40,7 +45,12 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
     /// Creates new convolution layer. The weights are given in
     /// Tensorflow layout.
     /// (kernel height, kernel width, in channels, out channels)
-    pub fn new_tf(weights: Array4<F>, bias_array: Option<Array2<F>>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
+    pub fn new_tf(
+        weights: Array4<F>,
+        bias_array: Option<Array1<F>>,
+        stride: usize,
+        padding: Padding,
+    ) -> ConvolutionLayer<F> {
         let permuted_view = weights.view().permuted_axes([3, 2, 0, 1]);
         // Hack to fix the memory layout, permuted axes makes a
         // col major array / non-contiguous array from weights
@@ -52,7 +62,13 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
 
     /// Analog to conv2d.
     pub fn convolve(&self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
-        conv2d(&self.kernel, self.bias.clone(), image, self.padding, self.stride)
+        conv2d(
+            &self.kernel,
+            self.bias.as_ref(),
+            image,
+            self.padding,
+            self.stride,
+        )
     }
 }
 
@@ -179,9 +195,9 @@ where
 /// Returns:
 /// -----------------------------------------------
 /// - out: Output data, of shape (F, H', W')
-pub fn conv2d<'a, T, V, F: 'static + Float>(
+pub fn conv2d<'a, T, V, F: 'static + Float + std::ops::AddAssign>(
     kernel_weights: T,
-    bias: Option<Array2<F>>,
+    bias: Option<&Array1<F>>,
     im2d: V,
     padding: Padding,
     stride: usize,
@@ -197,7 +213,6 @@ where
     let im2d_arr: ArrayView3<F> = im2d.into();
     let kernel_weights_arr: ArrayView4<F> = kernel_weights.into();
     let im_col: Array2<F>; // output of fn: im2col_ref()
-    let bias_vec:Array2<F>;
     let new_im_height: usize;
     let new_im_width: usize;
     let weight_shape = kernel_weights_arr.shape();
@@ -231,16 +246,6 @@ where
         // W' =  ((W - WW) / stride ) + 1
         new_im_height = ((im_height - kernel_height) / stride) + 1;
         new_im_width = ((im_width - kernel_width) / stride) + 1;
-    };
-
-    // initialize if bias
-    if bias.is_none(){
-        bias_vec = Array::zeros((new_im_height * new_im_width, num_filters));
-    } 
-    else {
-        // let bias_vec = bias.into_iter().flatten().collect();
-        bias_vec = bias.unwrap();
-        // let doubled = bias.unwrap().iter().map(|x| x * 2).collect();
     };
 
     // weights.reshape(F, HH*WW*C)
@@ -289,8 +294,37 @@ where
         );
     };
     let filter_transpose = filter_col.t();
-    let mul = im_col.dot(&filter_transpose) + bias_vec;
-    col2im_ref(&mul, new_im_height, new_im_width, 1)
+    let mul = im_col.dot(&filter_transpose);
+    let output = col2im_ref(&mul, new_im_height, new_im_width, 1);
+    add_bias(&output, bias)
+}
+
+pub(in crate) fn add_bias<F>(x: &Array3<F>, bias: Option<&Array1<F>>) -> Array3<F>
+where
+    F: 'static + Float + std::ops::AddAssign,
+{
+    if let Some(bias_array) = bias {
+        assert!(
+            bias_array.shape()[0] == x.shape()[0],
+            "Bias array has the wrong shape {:?} for vec of shape {:?}",
+            bias_array.shape(),
+            x.shape()
+        );
+        // Yes this is really necessary. Broadcasting with ndarray-rust
+        // starts at the right side of the shape, so we have to add
+        // the axes by hand (else it thinks that it should compare the
+        // output width and the bias channels).
+        (x + &bias_array
+            .clone()
+            .insert_axis(Axis(1))
+            .insert_axis(Axis(2))
+            .broadcast(x.shape())
+            .unwrap())
+            .into_dimensionality()
+            .unwrap()
+    } else {
+        x.clone()
+    }
 }
 
 #[cfg(test)]
@@ -324,12 +358,12 @@ mod tests {
             vec![1., 2., 1., 2., 1., 2., 1., 2., 1., 2., 1., 2.],
         );
         let testker = kernel.unwrap();
-        let bias = Array::zeros((9, 1));
+        let bias = Array::ones(1);
         let conv_layer = ConvolutionLayer::new(testker, Some(bias), 1, Padding::Valid);
         let output = arr3(&[[
-            [57.0, 75.0, 93.0],
-            [111.0, 129.0, 141.0],
-            [138.0, 156.0, 162.0],
+            [58.0, 76.0, 94.0],
+            [112.0, 130.0, 142.0],
+            [139.0, 157.0, 163.0],
         ]]);
         let convolved_image = conv_layer.convolve(&test_img);
 
