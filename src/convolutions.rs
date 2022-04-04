@@ -14,19 +14,26 @@ extern crate openblas_src;
 pub struct ConvolutionLayer<F: Float> {
     /// Weight matrix of the kernel
     pub(in crate) kernel: Array4<F>,
+    pub(in crate) bias: Option<Array1<F>>,
     pub(in crate) stride: usize,
     pub(in crate) padding: Padding,
 }
 
-impl<F: 'static + Float> ConvolutionLayer<F> {
-    /// Creates new convolution layer. The weights are given in
-    /// Pytorch layout.
+impl<F: 'static + Float + std::ops::AddAssign> ConvolutionLayer<F> {
+    /// Creates new convolution layer.
+    /// The weights are given in Pytorch layout.
     /// (out channels, in channels, kernel height, kernel width)
-    pub fn new(weights: Array4<F>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
+    /// Bias: (output height * output width, 1)
+    pub fn new(
+        weights: Array4<F>,
+        bias_array: Option<Array1<F>>,
+        stride: usize,
+        padding: Padding,
+    ) -> ConvolutionLayer<F> {
         assert!(stride > 0, "Stride of 0 passed");
-
         ConvolutionLayer {
             kernel: weights,
+            bias: bias_array,
             stride,
             padding,
         }
@@ -35,19 +42,30 @@ impl<F: 'static + Float> ConvolutionLayer<F> {
     /// Creates new convolution layer. The weights are given in
     /// Tensorflow layout.
     /// (kernel height, kernel width, in channels, out channels)
-    pub fn new_tf(weights: Array4<F>, stride: usize, padding: Padding) -> ConvolutionLayer<F> {
+    pub fn new_tf(
+        weights: Array4<F>,
+        bias_array: Option<Array1<F>>,
+        stride: usize,
+        padding: Padding,
+    ) -> ConvolutionLayer<F> {
         let permuted_view = weights.view().permuted_axes([3, 2, 0, 1]);
         // Hack to fix the memory layout, permuted axes makes a
         // col major array / non-contiguous array from weights
         let permuted_array: Array4<F> =
             Array::from_shape_vec(permuted_view.dim(), permuted_view.iter().copied().collect())
                 .unwrap();
-        ConvolutionLayer::new(permuted_array, stride, padding)
+        ConvolutionLayer::new(permuted_array, bias_array, stride, padding)
     }
 
     /// Analog to conv2d.
     pub fn convolve(&self, image: &DataRepresentation<F>) -> DataRepresentation<F> {
-        conv2d(&self.kernel, image, self.padding, self.stride)
+        conv2d(
+            &self.kernel,
+            self.bias.as_ref(),
+            image,
+            self.padding,
+            self.stride,
+        )
     }
 }
 
@@ -78,13 +96,15 @@ pub(in crate) fn get_padding_size(
     let pad_left = pad_along_width / 2;
     let pad_right = pad_along_width - pad_left;
 
+    // yes top/bottom and right/left are swapped. No, I don't know
+    // why this change makes it conform to the pytorchn implementation.
     (
         pad_along_height,
         pad_along_width,
-        pad_top,
         pad_bottom,
-        pad_left,
+        pad_top,
         pad_right,
+        pad_left,
     )
 }
 
@@ -174,8 +194,9 @@ where
 /// Returns:
 /// -----------------------------------------------
 /// - out: Output data, of shape (F, H', W')
-pub fn conv2d<'a, T, V, F: 'static + Float>(
+pub fn conv2d<'a, T, V, F: 'static + Float + std::ops::AddAssign>(
     kernel_weights: T,
+    bias: Option<&Array1<F>>,
     im2d: V,
     padding: Padding,
     stride: usize,
@@ -272,118 +293,35 @@ where
         );
     };
     let filter_transpose = filter_col.t();
-    let mul = im_col.dot(&filter_transpose); // + bias_m
-    col2im_ref(&mul, new_im_height, new_im_width, 1)
+    let mul = im_col.dot(&filter_transpose);
+    let output = col2im_ref(&mul, new_im_height, new_im_width, 1);
+    add_bias(&output, bias)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_2d_conv() {
-        let test_img = array![
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ]
-        ];
-        let kernel = Array::from_shape_vec(
-            (1, 3, 2, 2),
-            vec![1., 2., 1., 2., 1., 2., 1., 2., 1., 2., 1., 2.],
+pub(in crate) fn add_bias<F>(x: &Array3<F>, bias: Option<&Array1<F>>) -> Array3<F>
+where
+    F: 'static + Float + std::ops::AddAssign,
+{
+    if let Some(bias_array) = bias {
+        assert!(
+            bias_array.shape()[0] == x.shape()[0],
+            "Bias array has the wrong shape {:?} for vec of shape {:?}",
+            bias_array.shape(),
+            x.shape()
         );
-        let testker = kernel.unwrap();
-        let conv_layer = ConvolutionLayer::new(testker, 1, Padding::Valid);
-        let output = arr3(&[[
-            [57.0, 75.0, 93.0],
-            [111.0, 129.0, 141.0],
-            [138.0, 156.0, 162.0],
-        ]]);
-        let convolved_image = conv_layer.convolve(&test_img);
-
-        assert_eq!(convolved_image, output);
-
-        let test_img1 = array![
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ],
-            [
-                [1.0, 2.0, 3.0, 4.0],
-                [4.0, 5.0, 6.0, 7.0],
-                [7.0, 8.0, 9.0, 9.0],
-                [7.0, 8.0, 9.0, 9.0]
-            ]
-        ];
-        let kernel1 = Array::from_shape_vec(
-            (1, 3, 2, 2),
-            vec![1., 2., 1., 2., 1., 2., 1., 2., 1., 2., 1., 2.],
-        );
-        let testker1 = kernel1.unwrap();
-        let conv_layer1 = ConvolutionLayer::new(testker1, 1, Padding::Same);
-        let output1 = arr3(&[[
-            [57.0, 75.0, 93.0, 33.0],
-            [111.0, 129.0, 141.0, 48.0],
-            [138.0, 156.0, 162.0, 54.0],
-            [69.0, 78.0, 81.0, 27.0],
-        ]]);
-        let convolved_image1 = conv_layer1.convolve(&test_img1);
-
-        assert_eq!(convolved_image1, output1);
-    }
-
-    #[test]
-    fn test_conv2d_tf_layout() {
-        let weights_pt = Array::from_shape_vec(
-            (2, 1, 3, 3),
-            vec![
-                0.06664403, 0.65961174, 0.49895822, 0.80375346, 0.20159994, 0.25319365, 0.0520944,
-                0.33067411, 0.76843672, 0.08252145, 0.22638044, 0.09291164, 0.63277792, 0.50181511,
-                0.40393298, 0.19495441, 0.30511827, 0.28940649,
-            ],
-        )
-        .unwrap();
-
-        let weights_tf = Array::from_shape_vec(
-            (3, 3, 1, 2),
-            vec![
-                0.06664403, 0.08252145, 0.65961174, 0.22638044, 0.49895822, 0.09291164, 0.80375346,
-                0.63277792, 0.20159994, 0.50181511, 0.25319365, 0.40393298, 0.0520944, 0.19495441,
-                0.33067411, 0.30511827, 0.76843672, 0.28940649,
-            ],
-        )
-        .unwrap();
-
-        let im = array![[
-            [0.56494069, 0.3395626, 0.71270928],
-            [0.04827336, 0.12623257, 0.30822787],
-            [0.82976574, 0.8590054, 0.90254945]
-        ]];
-
-        let conv_pt = ConvolutionLayer::new(weights_pt, 1, Padding::Valid);
-        let conv_tf = ConvolutionLayer::new_tf(weights_tf, 1, Padding::Valid);
-        assert_eq!(conv_pt.convolve(&im), conv_tf.convolve(&im));
+        // Yes this is really necessary. Broadcasting with ndarray-rust
+        // starts at the right side of the shape, so we have to add
+        // the axes by hand (else it thinks that it should compare the
+        // output width and the bias channels).
+        (x + &bias_array
+            .clone()
+            .insert_axis(Axis(1))
+            .insert_axis(Axis(2))
+            .broadcast(x.shape())
+            .unwrap())
+            .into_dimensionality()
+            .unwrap()
+    } else {
+        x.clone()
     }
 }
