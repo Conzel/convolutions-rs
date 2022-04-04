@@ -10,6 +10,9 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ndarray = "0.15.3"
+ndarray-rand = "0.14.0"
+ndarray = {version="0.15.3", features=["blas"]}
+blas-src = {version="0.8", features = ["openblas"] }
+openblas-src = {version="0.10", features = ["cblas", "system"] }
 num-traits = "0.2.14"
 ndarray-npy = "0.8.1"

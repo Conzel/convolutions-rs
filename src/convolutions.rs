@@ -5,7 +5,8 @@
 use crate::{DataRepresentation, Padding};
 use ndarray::*;
 use num_traits::Float;
-
+extern crate blas_src;
+extern crate openblas_src;
 /// Rust implementation of a convolutional layer.
 /// The weight matrix shall have dimension (in that order)
 /// (input channels, output channels, kernel width, kernel height),

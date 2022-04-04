@@ -10,7 +10,8 @@ use crate::{
 };
 use ndarray::*;
 use num_traits::Float;
-
+extern crate blas_src;
+extern crate openblas_src;
 /// Analog to a Convolution Layer
 pub struct TransposedConvolutionLayer<F: Float> {
     convolution_layer: ConvolutionLayer<F>,
