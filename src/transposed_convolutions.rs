@@ -162,7 +162,6 @@ where
         Padding::Valid => (0, 0, 0, 0),
         Padding::Same => (k_h / 2, k_w / 2, stride - 1, stride - 1),
     };
-    println!("{:?}, {:?}", pad_h, pad_w);
     let output_height = (im_h - 1) * stride + k_h + output_pad_h - 2 * pad_h;
     let output_width = (im_w - 1) * stride + k_w + output_pad_w - 2 * pad_w;
     // let output_height = (im_h - 1) * stride + k_h;
