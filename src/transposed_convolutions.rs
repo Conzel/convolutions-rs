@@ -157,7 +157,7 @@ where
     let im_h = im_mat.shape()[1];
     let im_w = im_mat.shape()[2];
     let im_reshape = im_mat.into_shape((im_c, im_h * im_w)).unwrap();
-    let data_matrix: Array2<F> = im_reshape.t().dot(&ker_reshape);
+    let data_matrix: Array2<F> = ker_reshape.t().dot(&im_reshape);
     // output padding might be necessary to achieve the desired shape
     let (pad_h, pad_w, output_pad_h, output_pad_w) = match padding {
         Padding::Valid => (0, 0, 0, 0),
@@ -165,11 +165,8 @@ where
     };
     let output_height = (im_h - 1) * stride + k_h + output_pad_h - 2 * pad_h;
     let output_width = (im_w - 1) * stride + k_w + output_pad_w - 2 * pad_w;
-    // let output_height = (im_h - 1) * stride + k_h;
-    // let output_width = (im_w - 1) * stride + k_w;
-    let data_matrix_contiguous = Array::from_iter(data_matrix.view().t().iter().map(|a| *a));
     let t_conv_output = col2im_pt(
-        data_matrix_contiguous.as_slice().unwrap(),
+        data_matrix.as_slice().unwrap(),
         k_f,
         output_height,
         output_width,
