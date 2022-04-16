@@ -100,12 +100,16 @@ fn col2im_pt<'a, F: 'a + Float + AddAssign>(
 
                 if h_im < height as i64 && h_im >= 0 && w_im < width as i64 && w_im >= 0 {
                     // TODO: Use unsafe get
-                    let el = res
-                        .get_mut((c_im * height + h_im as usize) * width + w_im as usize)
-                        .unwrap();
+                    unsafe {
+                        let el =
+                            res.uget_mut((c_im * height + h_im as usize) * width + w_im as usize);
 
-                    // TODO: Use unsafe get
-                    el.add_assign(data_col[(c_col * height_col + h_col) * width_col + w_col]);
+                        // TODO: Use unsafe get
+                        el.add_assign(
+                            *data_col
+                                .get_unchecked((c_col * height_col + h_col) * width_col + w_col),
+                        );
+                    }
                 }
             }
         }
