@@ -2,6 +2,9 @@
 //!
 //! More can be read here:
 //! - <https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53?gi=f4a37beea40b>
+
+use std::ops::AddAssign;
+
 use crate::{DataRepresentation, Padding};
 use ndarray::*;
 use num_traits::Float;
@@ -151,29 +154,6 @@ where
     cols_img
 }
 
-fn col2im_ref<'a, T, F: 'a + Float>(
-    mat: T,
-    height_prime: usize,
-    width_prime: usize,
-    _channels: usize,
-) -> DataRepresentation<F>
-where
-    T: AsArray<'a, F, Ix2>,
-{
-    let img_vec: ArrayView2<F> = mat.into();
-    let filter_axis = img_vec.len_of(Axis(1));
-    let mut img_mat: Array3<F> = Array::zeros((filter_axis, height_prime, width_prime));
-    // C = 1
-    for i in 0..filter_axis {
-        let col = img_vec.slice(s![.., i]).to_vec();
-        let col_reshape = Array::from_shape_vec((height_prime, width_prime), col).unwrap();
-        img_mat
-            .slice_mut(s![i, 0..height_prime, 0..width_prime])
-            .assign(&col_reshape);
-    }
-    img_mat
-}
-
 /// Performs a convolution on the given image data using this layers parameters.
 /// We always convolve on flattened images and expect the input array in im2col
 /// style format.
@@ -293,7 +273,11 @@ where
     };
     let filter_transpose = filter_col.t();
     let mul = im_col.dot(&filter_transpose);
-    let output = col2im_ref(&mul, new_im_height, new_im_width, 1);
+    let output = mul
+        .into_shape((new_im_height, new_im_width, num_filters))
+        .unwrap()
+        .permuted_axes([2, 0, 1]);
+
     add_bias(&output, bias)
 }
 
