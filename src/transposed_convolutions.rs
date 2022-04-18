@@ -63,11 +63,14 @@ impl<F: 'static + Float + std::ops::AddAssign> TransposedConvolutionLayer<F> {
 /// This implementation doesn't just assign the matrix patch-wise to a new
 /// matrix, but also sums the patches such that it unrolls the result
 /// of conv-transpose.
+///
 /// mat is a matrix of size (image_width * image_height, c_out * k_h * k_w),
 /// in which each entry is the value of a kernel pixel multiplied with an image pixels
 /// with the channels summed out
-/// The output naming is a bit confusing, as this function is originally used in the backward
-/// pass. What this function returns is simply (channels, height, width).
+///
+/// The naming is a bit confusing, as this function is originally used in the backward
+/// pass. What this function returns is simply an array of (channels, height, width).
+///
 fn col2im_pt<'a, F: 'a + Float + AddAssign>(
     data_col: &[F],
     channels: usize,
@@ -114,12 +117,14 @@ fn col2im_pt<'a, F: 'a + Float + AddAssign>(
     Array::from_shape_vec((channels, height, width), res.into_iter().collect()).unwrap()
 }
 
-/// Performs a transposed convolution on the input image. This upsamples the image.
+/// Performs a transposed convolution on the input image. Might be used to upsample the image.
 /// This implementation is identical to the supplied by Pytorch and works by performing
 /// a "backwards pass" on the input.
 ///
 /// More explanation can be read here:
 /// - <https://datascience.stackexchange.com/questions/6107/what-are-deconvolutional-layers>
+///
+/// The implementation is mostly taken from Pytorch.
 ///
 /// NOTE: THERE IS A CHANGE IN KERNEL DIMENSIONS FOR CONV TRANSPOSED
 /// Input:
