@@ -3,8 +3,6 @@
 //! More can be read here:
 //! - <https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53?gi=f4a37beea40b>
 
-use std::ops::AddAssign;
-
 use crate::{DataRepresentation, Padding};
 use ndarray::*;
 use num_traits::Float;
