@@ -161,7 +161,8 @@ where
     let im_c = im_mat.shape()[0];
     let im_h = im_mat.shape()[1];
     let im_w = im_mat.shape()[2];
-    let im_reshape = im_mat.into_shape((im_c, im_h * im_w)).unwrap();
+    let im_mat_contig = im_mat.as_standard_layout();
+    let im_reshape = im_mat_contig.into_shape((im_c, im_h * im_w)).unwrap();
     let data_matrix: Array2<F> = ker_reshape.t().dot(&im_reshape);
     // output padding might be necessary to achieve the desired shape
     let (pad_h, pad_w, output_pad_h, output_pad_w) = match padding {
