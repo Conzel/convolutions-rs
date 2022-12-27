@@ -27,7 +27,7 @@ See here for further discussion: https://stackoverflow.com/questions/52975843/co
 As mentioned, this package provides normal convolutions as well as transposed convolutions. We provide both in the form of free functions as well as something resembling a neural network layer. This crate also requires ndarray to use the functions, as input and output are in the form of ndarrays.
 
 Example:
-```
+```rust
 use convolutions_rs::convolutions::*;
 use ndarray::*;
 use convolutions_rs::Padding;
